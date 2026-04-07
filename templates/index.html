@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SuPi-8 Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #111; color: #eee; margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 0 auto; padding: 10px; }
+        .preview-wrapper { max-width: 800px; margin: 0 auto; }
+        .preview-box { width: 100%; background: #000; border: 2px solid #444; aspect-ratio: 4/3; }
+        .preview-box img { width: 100%; height: auto; display: block; }
+        .btn { padding: 12px; margin: 5px 0; border-radius: 5px; border: none; cursor: pointer; font-size: 16px; width: 100%; display: block; }
+        .btn-start { background: #28a745; color: white; }
+        .btn-stop { background: #dc3545; color: white; }
+        .config-box { background: #222; border-radius: 10px; margin: 10px auto; padding: 15px; text-align: left; }
+        .config-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333; }
+        .config-row:last-child { border-bottom: none; }
+        .config-row input[type=number] { background: #333; color: #eee; border: 1px solid #555; border-radius: 5px; padding: 6px 10px; font-size: 1em; width: 100px; text-align: center; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #555; border-radius: 26px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
+        input:checked + .slider { background: #28a745; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .awb-buttons { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .btn-awb { background: #333; color: #eee; border: 1px solid #555; border-radius: 5px; padding: 6px 10px; cursor: pointer; font-size: 1.2em; transition: background 0.2s; }
+        .btn-awb:hover { background: #444; }
+        .btn-awb.active { background: #007bff; border-color: #007bff; }
+        .file-list { background: #222; border-radius: 10px; margin: 10px auto; padding: 10px; }
+        .file-entry { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .file-entry:last-child { border-bottom: none; }
+        .file-name { color: #007bff; flex: 1; text-align: left; font-size: 0.95em; text-decoration: none; }
+        .file-name:hover { text-decoration: underline; }
+        .file-meta { color: #aaa; font-size: 0.9em; white-space: nowrap; }
+        .file-actions { display: flex; gap: 6px; }
+        .btn-dl { background: #007bff; color: white; border: none; border-radius: 5px; padding: 6px 12px; cursor: pointer; font-size: 0.85em; text-decoration: none; white-space: nowrap; }
+        .btn-del { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 6px 12px; cursor: pointer; font-size: 0.85em; white-space: nowrap; }
+        .btn-dl:hover { background: #0056b3; }
+        .btn-del:hover { background: #a71d2a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎞️ SuPi-8</h1>
+        <div class="preview-wrapper">
+            <div class="preview-box">
+                <img id="stream" src="" style="display: none;">
+            </div>
+            <button id="toggleBtn" class="btn btn-start" onclick="toggleStream()">Start Preview</button>
+        </div>
+
+        <div class="config-box">
+            <div class="config-row">
+                <label>FPS</label>
+                <input type="number" id="fps-input" min="12" max="30" value="18" onchange="updateConfig()">
+            </div>
+            <div class="config-row">
+                <label>Brightness Threshold</label>
+                <input type="number" id="thr-input" min="5" max="100" value="30" onchange="updateConfig()">
+            </div>
+            <div class="config-row">
+                <label>Bitrate (Mbit/s)</label>
+                <input type="number" id="bitrate-input" min="1" max="25" value="10" onchange="updateConfig()">
+            </div>
+            <div class="config-row">
+                <label>White Balance</label>
+                <div class="awb-buttons">
+                    <button class="btn-awb" data-mode="Tungsten"    title="Tungsten (~2800K)">🕯️</button>
+                    <button class="btn-awb" data-mode="Indoor"      title="Indoor (~3000K)">🏠</button>
+                    <button class="btn-awb" data-mode="Fluorescent" title="Fluorescent (~4000K)">💡</button>
+                    <button class="btn-awb" data-mode="Daylight"    title="Daylight (~5500K)">☀️</button>
+                    <button class="btn-awb" data-mode="Cloudy"      title="Cloudy (~6500K)">☁️</button>
+                    <button class="btn-awb" data-mode="Auto"        title="Auto">🔄</button>
+                </div>
+            </div>
+            <div class="config-row">
+                <label>Live Preview while Recording</label>
+                <label class="switch">
+                    <input type="checkbox" id="preview-toggle" onchange="togglePreview()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <h3>Aufnahmen</h3>
+        <div class="file-list" id="file-list">
+            {% for file in files %}
+                <div class="file-entry" id="entry-{{ file.name }}">
+                    <a class="file-name" href="/download/{{ file.name }}">{{ file.name }}</a>
+                    <span class="file-meta">{{ file.size }}</span>
+                    <div class="file-actions">
+                        <a class="btn-dl" href="/download/{{ file.name }}" download>⬇ Download</a>
+                        <button class="btn-del" onclick="deleteFile('{{ file.name }}')">🗑 Delete</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        let streaming = false;
+        const img = document.getElementById('stream');
+        const btn = document.getElementById('toggleBtn');
+
+        function toggleStream() {
+            if (!streaming) {
+                img.src = "/video_feed";
+                img.style.display = "block";
+                btn.innerText = "Stop Preview";
+                btn.className = "btn btn-stop";
+                streaming = true;
+            } else {
+                img.src = "";
+                img.style.display = "none";
+                btn.innerText = "Start Preview";
+                btn.className = "btn btn-start";
+                streaming = false;
+            }
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm(`Delete ${filename}?`)) return;
+            const res = await fetch(`/delete/${filename}`, { method: 'DELETE' });
+            if (res.ok) {
+                document.getElementById(`entry-${filename}`).remove();
+            }
+        }
+
+        async function togglePreview() {
+            const enabled = document.getElementById('preview-toggle').checked;
+            await fetch('/set_preview', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enabled: enabled})
+            });
+        }
+
+        async function updateConfig() {
+            const fps = document.getElementById('fps-input').value;
+            const thr = document.getElementById('thr-input').value;
+            const bitrate = document.getElementById('bitrate-input').value;
+            await fetch('/set_config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({fps: fps, threshold: thr, bitrate: bitrate})
+            });
+        }
+
+        function setActiveAwb(mode) {
+            document.querySelectorAll('.btn-awb').forEach(b => {
+                b.classList.toggle('active', b.dataset.mode === mode);
+            });
+        }
+
+        document.querySelectorAll('.btn-awb').forEach(b => {
+            b.addEventListener('click', async () => {
+                const mode = b.dataset.mode;
+                await fetch('/set_awb', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({mode: mode})
+                });
+                setActiveAwb(mode);
+            });
+        });
+
+        fetch('/get_config').then(r => r.json()).then(d => {
+            document.getElementById('fps-input').value = d.fps;
+            document.getElementById('thr-input').value = d.threshold;
+            document.getElementById('bitrate-input').value = d.bitrate;
+            document.getElementById('preview-toggle').checked = d.preview_while_recording;
+            setActiveAwb(d.awb);
+        });
+        // Sync time from browser to Pi on page load
+        fetch('/set_time', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({time: new Date().toISOString()})
+        });
+    </script>
+</body>
+</html>
