@@ -26,9 +26,6 @@ DEBUG_PRINT_EVERY = 20
 LORES_SIZE = (640, 480)
 NUM_SAMPLES = 3
 AWB_MODE = "Auto"
-preview_while_recording = False
-stream_active = False
-
 AWB_MODES = {
     "Tungsten":    controls.AwbModeEnum.Tungsten,
     "Indoor":      controls.AwbModeEnum.Indoor,
@@ -37,6 +34,13 @@ AWB_MODES = {
     "Cloudy":      controls.AwbModeEnum.Cloudy,
     "Auto":        controls.AwbModeEnum.Auto,
 }
+
+# ========= Sonstiges =========
+
+preview_while_recording = False
+stream_active = False
+camera_status = {"avg": 0.0, "focus": 0.0, "gain": 0.0, "temp": 0, "recording": False}
+
 
 if not os.path.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
@@ -114,6 +118,11 @@ def get_config():
     return jsonify({'threshold': BRIGHTNESS_THRESHOLD, 'fps': FPS, 'bitrate': BITRATE // 1_000_000, 'preview_while_recording': preview_while_recording, 'awb': AWB_MODE})
 
 
+@app.route('/get_status')
+def get_status():
+    return jsonify(camera_status)
+
+
 @app.route('/set_awb', methods=['POST'])
 def set_awb():
     global AWB_MODE
@@ -152,8 +161,8 @@ def average_brightness_y_plane_yuv420(frame_yuv, lores_size):
 
 
 def camera_worker():
+    global camera_status
     frame_us = int(round(1_000_000 / FPS))
-#    min_frame_us = int(frame_us / 2)
     camera_controls = {
         "FrameDurationLimits": (frame_us, frame_us),
         "AfMode": controls.AfModeEnum.Manual,
@@ -198,6 +207,7 @@ def camera_worker():
             exp = metadata.get("ExposureTime", 0)
             colour_gains = metadata.get("ColourGains", (0, 0))
             colour_temp = metadata.get("ColourTemperature", 0)
+            focus = metadata.get("FocusFoM", 0)
 
             if DEBUG_PRINT_EVERY and (loop_count % DEBUG_PRINT_EVERY == 0):
                 print(f"[{time.strftime('%H:%M:%S')}] avgY={avg:.1f}  "
@@ -205,31 +215,40 @@ def camera_worker():
                       f"dark_cnt={consecutive_dark_count}  stream={stream_active}  "
                       f"preview_while_rec={preview_while_recording}  "
                       f"gain={gain:.2f}  exp={exp}  "
-                      f"R={colour_gains[0]:.2f}  B={colour_gains[1]:.2f}  temp={colour_temp}K")
+                      f"R={colour_gains[0]:.2f}  B={colour_gains[1]:.2f}  temp={colour_temp}K  "
+                      f"focus={focus:.2f}"
+                      )
+
+            camera_status.update({
+                "avg": round(avg, 1),
+                "focus": round(focus, 1),
+                "gain": round(gain, 2),
+                "temp": colour_temp,
+                "recording": recording,
+            })
 
             frame_us = int(round(1_000_000 / FPS))
 
             if avg < BRIGHTNESS_THRESHOLD:
                 consecutive_dark_count += 1
                 if recording and consecutive_dark_count >= NUM_SAMPLES:
-                    picam2.stop_recording()
+                    picam2.stop_encoder()
                     recording = False
-                    print("Aufnahme gestoppt (Dunkelheit)")
-                    picam2.start()
+                    print("Recording stopped")
             else:
                 consecutive_dark_count = 0
                 if not recording and (not stream_active or preview_while_recording):
                     filename = os.path.join(OUTPUT_PATH, datetime.now().strftime("%y-%m-%d_%H-%M-%S") + ".mp4")
                     encoder = H264Encoder(bitrate=BITRATE, framerate=FPS, enable_sps_framerate=True)
                     output = FfmpegOutput(filename)
-                    picam2.start_recording(encoder, output=output)
+                    picam2.start_encoder(encoder, output)
                     recording = True
-                    print(f"Aufnahme startet: {filename}")
+                    print(f"Recording started: {filename}")
+
                 elif recording and stream_active and not preview_while_recording:
-                    picam2.stop_recording()
+                    picam2.stop_encoder()
                     recording = False
-                    print("Aufnahme gestoppt (Stream aktiv)")
-                    picam2.start()
+                    print("Recording stopped (preview)")
 
             loop_count += 1
             time.sleep(CHECK_EVERY_S)
