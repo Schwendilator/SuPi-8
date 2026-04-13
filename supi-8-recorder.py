@@ -10,7 +10,7 @@ from flask import Flask, render_template, send_from_directory, Response, request
 
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
-from picamera2.outputs import FfmpegOutput
+from picamera2.outputs import FileOutput
 from libcamera import Transform, controls
 
 # ========= Einstellungen =========
@@ -21,8 +21,8 @@ ROTATE_180 = True
 BITRATE = 10_000_000
 OUTPUT_PATH = "recordings"
 BRIGHTNESS_THRESHOLD = 30.0
-CHECK_EVERY_S = 0.05
-DEBUG_PRINT_EVERY = 20
+CHECK_EVERY_S = 0.1
+DEBUG_PRINT_EVERY = 10
 LORES_SIZE = (640, 480)
 NUM_SAMPLES = 3
 AWB_MODE = "Auto"
@@ -153,6 +153,22 @@ def set_time():
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)})
 
+
+
+# ========= Muxen nach Aufnahme =========
+
+def mux_and_remove_raw(raw_file, mp4_file, fps):
+    cmd = ["ffmpeg", "-y", "-r", str(fps), "-i", raw_file, "-c", "copy", mp4_file]
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        os.remove(raw_file)
+        print(f"Muxing done, raw file removed: {mp4_file}")
+    except Exception as e:
+        print(f"Error while muxing {raw_file}: {e}")
+
+
+
+
 # ========= Kamera-Logik =========
 def average_brightness_y_plane_yuv420(frame_yuv, lores_size):
     w, h = lores_size
@@ -196,6 +212,7 @@ def camera_worker():
     recording = False
     loop_count = 0
     consecutive_dark_count = 0
+    filename = None
 
     try:
         while True:
@@ -234,13 +251,21 @@ def camera_worker():
                 if recording and consecutive_dark_count >= NUM_SAMPLES:
                     picam2.stop_encoder()
                     recording = False
-                    print("Recording stopped")
+                    mp4_filename = filename.replace(".h264", ".mp4")
+                    threading.Thread(
+                        target=mux_and_remove_raw, 
+                        args=(filename, mp4_filename, FPS),
+                        daemon=True
+                    ).start()
+                    
+                    print(f"Recording stopped, muxing in background...")
+            
             else:
                 consecutive_dark_count = 0
                 if not recording and (not stream_active or preview_while_recording):
-                    filename = os.path.join(OUTPUT_PATH, datetime.now().strftime("%y-%m-%d_%H-%M-%S") + ".mp4")
+                    filename = os.path.join(OUTPUT_PATH, datetime.now().strftime("%y-%m-%d_%H-%M-%S") + ".h264")
                     encoder = H264Encoder(bitrate=BITRATE, framerate=FPS, enable_sps_framerate=True)
-                    output = FfmpegOutput(filename)
+                    output = FileOutput(filename)
                     picam2.start_encoder(encoder, output)
                     recording = True
                     print(f"Recording started: {filename}")
