@@ -31,12 +31,6 @@
         .status-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
         .status-label { font-size: 0.65em; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
         .status-value { font-size: 1.3em; font-weight: bold; color: #eee; font-variant-numeric: tabular-nums; }
-        .focus-row { display: flex; flex-direction: column; gap: 6px; }
-        .focus-header { display: flex; justify-content: space-between; align-items: baseline; }
-        .focus-label { font-size: 0.65em; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
-        .focus-value { font-size: 1.3em; font-weight: bold; color: #eee; font-variant-numeric: tabular-nums; }
-        .focus-bar-bg { background: #333; border-radius: 6px; height: 14px; overflow: hidden; }
-        .focus-bar-fill { height: 100%; border-radius: 6px; transition: width 0.25s ease, background 0.25s ease; }
         .rec-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #555; margin-right: 5px; }
         .rec-dot.active { background: #dc3545; animation: blink 1s step-start infinite; }
         @keyframes blink { 50% { opacity: 0; } }
@@ -80,19 +74,21 @@
                     <span class="status-label">Temp</span>
                     <span class="status-value" id="stat-temp">–</span>
                 </div>
-            </div>
-            <div class="focus-row">
-                <div class="focus-header">
-                    <span class="focus-label">Focus</span>
-                    <span class="focus-value" id="stat-focus">–</span>
-                </div>
-                <div class="focus-bar-bg">
-                    <div class="focus-bar-fill" id="focus-bar" style="width: 0%"></div>
+                <div class="status-item"> 
+                    <span class="status-label">Focus</span>
+                    <span class="status-value" id="stat-focus">–</span>
                 </div>
             </div>
         </div>
 
         <div class="config-box">
+            <div class="config-row">
+                <label>Focus Peaking</label>
+                <label class="switch">
+                    <input type="checkbox" id="peaking-toggle" onchange="togglePeaking()">
+                    <span class="slider"></span>
+                </label>
+            </div>        
             <div class="config-row">
                 <label>FPS</label>
                 <input type="number" id="fps-input" min="12" max="30" value="18" onchange="updateConfig()">
@@ -142,6 +138,7 @@
 
     <script>
         let streaming = false;
+
         const img = document.getElementById('stream');
         const btn = document.getElementById('toggleBtn');
 
@@ -159,6 +156,15 @@
                 btn.className = "btn btn-start";
                 streaming = false;
             }
+        }
+
+        async function togglePeaking() {
+            const enabled = document.getElementById('peaking-toggle').checked;
+            await fetch('/set_peaking', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enabled: enabled})
+            });
         }
 
         async function deleteFile(filename) {
@@ -212,6 +218,7 @@
             document.getElementById('thr-input').value = d.threshold;
             document.getElementById('bitrate-input').value = d.bitrate;
             document.getElementById('preview-toggle').checked = d.preview_while_recording;
+            document.getElementById('peaking-toggle').checked = d.focus_peaking
             setActiveAwb(d.awb);
         });
         // Poll camera status every 500ms
@@ -222,16 +229,8 @@
                 const d = await res.json();
                 document.getElementById('stat-avg').textContent = d.avg;
                 document.getElementById('stat-gain').textContent = d.gain.toFixed(2);
-                // document.getElementById('stat-exp').textContent = (d.exp / 1000).toFixed(1) + ' ms';
                 document.getElementById('stat-temp').textContent = d.temp ? d.temp + ' K' : '–';
                 document.getElementById('stat-focus').textContent = d.focus;
-                const pct = Math.min(100, (d.focus / FOCUS_MAX) * 100);
-                const bar = document.getElementById('focus-bar');
-                bar.style.width = pct + '%';
-                // Color: red below 33%, yellow 33-66%, green above 66%
-                const r = pct < 50 ? 255 : Math.round(255 - (pct - 50) * 5.1);
-                const g = pct > 50 ? 255 : Math.round(pct * 5.1);
-                bar.style.background = `rgb(${r},${g},0)`;
                 const dot = document.getElementById('rec-dot');
                 const label = document.getElementById('rec-label');
                 dot.classList.toggle('active', d.recording);

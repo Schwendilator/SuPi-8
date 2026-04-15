@@ -26,6 +26,7 @@ DEBUG_PRINT_EVERY = 10
 LORES_SIZE = (640, 480)
 NUM_SAMPLES = 3
 AWB_MODE = "Auto"
+PEAKING_THRESHOLD = 75
 AWB_MODES = {
     "Tungsten":    controls.AwbModeEnum.Tungsten,
     "Indoor":      controls.AwbModeEnum.Indoor,
@@ -41,6 +42,7 @@ preview_while_recording = False
 stream_active = False
 camera_status = {"avg": 0.0, "focus": 0.0, "gain": 0.0, "temp": 0, "recording": False}
 
+focus_peaking = False
 
 if not os.path.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
@@ -58,7 +60,18 @@ def gen_frames():
         while True:
             frame = picam2.capture_array("lores")
             y_frame = frame[:LORES_SIZE[1], :LORES_SIZE[0]]
-            ret, buffer = cv2.imencode('.jpg', y_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+ 
+            if focus_peaking:
+                bgr = cv2.cvtColor(y_frame, cv2.COLOR_GRAY2BGR)
+                gaussblurr = cv2.GaussianBlur(y_frame, (3, 3), 0)
+                edges = cv2.Laplacian(gaussblurr, cv2.CV_16S, ksize=3)
+                edges = cv2.convertScaleAbs(edges)
+                _, mask = cv2.threshold(edges, PEAKING_THRESHOLD, 255, cv2.THRESH_BINARY)
+                bgr[mask > 0] = (0, 0, 255)
+                ret, buffer = cv2.imencode('.jpg', bgr, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            else:
+                ret, buffer = cv2.imencode('.jpg', y_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+ 
             if not ret:
                 continue
             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
@@ -110,12 +123,17 @@ def set_config():
         FPS = int(data['fps'])
     if 'bitrate' in data:
         BITRATE = int(data['bitrate']) * 1_000_000
-    return jsonify({'status': 'ok', 'threshold': BRIGHTNESS_THRESHOLD, 'fps': FPS, 'bitrate': BITRATE // 1_000_000})
+    return jsonify({'status': 'ok', 'threshold': BRIGHTNESS_THRESHOLD, 'fps': FPS, 'bitrate': BITRATE // 1_000_000,})
 
 
 @app.route('/get_config')
 def get_config():
-    return jsonify({'threshold': BRIGHTNESS_THRESHOLD, 'fps': FPS, 'bitrate': BITRATE // 1_000_000, 'preview_while_recording': preview_while_recording, 'awb': AWB_MODE})
+    return jsonify({'threshold': BRIGHTNESS_THRESHOLD, 
+                    'fps': FPS, 
+                    'bitrate': BITRATE // 1_000_000, 
+                    'preview_while_recording': preview_while_recording,
+                    'focus_peaking' : focus_peaking,
+                     'awb': AWB_MODE})
 
 
 @app.route('/get_status')
@@ -153,7 +171,12 @@ def set_time():
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)})
 
-
+@app.route('/set_peaking', methods=['POST'])
+def set_peaking():
+    global focus_peaking
+    data = request.get_json()
+    focus_peaking = bool(data.get('enabled', False))
+    return jsonify({'status': 'ok', 'focus_peaking': focus_peaking})
 
 # ========= Muxen nach Aufnahme =========
 
@@ -231,6 +254,7 @@ def camera_worker():
                       f"({'REC' if recording else '---'})  thr={BRIGHTNESS_THRESHOLD:.1f}  "
                       f"dark_cnt={consecutive_dark_count}  stream={stream_active}  "
                       f"preview_while_rec={preview_while_recording}  "
+                      f"focus_peaking={focus_peaking}  "
                       f"gain={gain:.2f}  exp={exp}  "
                       f"R={colour_gains[0]:.2f}  B={colour_gains[1]:.2f}  temp={colour_temp}K  "
                       f"focus={focus:.2f}"
