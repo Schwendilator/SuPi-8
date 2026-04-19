@@ -6,8 +6,7 @@ import subprocess
 import numpy as np
 import cv2
 from datetime import datetime
-from flask import Flask, render_template, send_from_directory, Response, request, jsonify
-
+from flask import Flask, render_template, send_from_directory, Response, request, jsonify, redirect
 from picamera2 import Picamera2
 from picamera2.encoders import H264Encoder
 from picamera2.outputs import FileOutput
@@ -20,7 +19,7 @@ ROI_NORM = (0.25, 0.0, 0.75, 1.0)
 ROTATE_180 = True
 BITRATE = 10_000_000
 OUTPUT_PATH = "recordings"
-BRIGHTNESS_THRESHOLD = 30.0
+BRIGHTNESS_THRESHOLD = 50
 CHECK_EVERY_S = 0.1
 DEBUG_PRINT_EVERY = 10
 LORES_SIZE = (640, 480)
@@ -132,8 +131,9 @@ def get_config():
                     'fps': FPS, 
                     'bitrate': BITRATE // 1_000_000, 
                     'preview_while_recording': preview_while_recording,
-                    'focus_peaking' : focus_peaking,
-                     'awb': AWB_MODE})
+                    'focus_peaking': focus_peaking,
+                    'peaking_threshold': PEAKING_THRESHOLD,
+                    'awb': AWB_MODE})
 
 
 @app.route('/get_status')
@@ -177,6 +177,16 @@ def set_peaking():
     data = request.get_json()
     focus_peaking = bool(data.get('enabled', False))
     return jsonify({'status': 'ok', 'focus_peaking': focus_peaking})
+
+
+# ========= Captive Portal =========
+
+@app.route('/hotspot-detect.html')         # iOS
+@app.route('/generate_204')                # Android
+@app.route('/connectivity-check.html')     # older Android
+@app.route('/ncsi.txt')                    # Windows
+def captive_portal():
+    return redirect('http://10.42.0.1/', 302)
 
 # ========= Muxen nach Aufnahme =========
 
@@ -308,4 +318,4 @@ def camera_worker():
 if __name__ == "__main__":
     t = threading.Thread(target=camera_worker, daemon=True)
     t.start()
-    app.run(host='0.0.0.0', port=80, threaded=True)
+    app.run(host='0.0.0.0', port=5091, threaded=True)
