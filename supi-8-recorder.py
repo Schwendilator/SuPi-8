@@ -15,7 +15,7 @@ from libcamera import Transform, controls
 # ========= Einstellungen =========
 FPS = 18
 RES_MAIN = (1600, 1200)
-ROI_NORM = (0.25, 0.0, 0.75, 1.0)
+ROI_NORM = (0.2, 0.0, 0.75, 1.0)
 ROTATE_180 = True
 BITRATE = 10_000_000
 OUTPUT_PATH = "recordings"
@@ -61,13 +61,13 @@ def gen_frames():
             y_frame = frame[:LORES_SIZE[1], :LORES_SIZE[0]]
  
             if focus_peaking:
-                bgr = cv2.cvtColor(y_frame, cv2.COLOR_GRAY2BGR)
+                rbg = cv2.cvtColor(y_frame, cv2.COLOR_GRAY2RGB)
                 gaussblurr = cv2.GaussianBlur(y_frame, (3, 3), 0)
                 edges = cv2.Laplacian(gaussblurr, cv2.CV_16S, ksize=3)
                 edges = cv2.convertScaleAbs(edges)
                 _, mask = cv2.threshold(edges, PEAKING_THRESHOLD, 255, cv2.THRESH_BINARY)
-                bgr[mask > 0] = (0, 0, 255)
-                ret, buffer = cv2.imencode('.jpg', bgr, [cv2.IMWRITE_JPEG_QUALITY, 70])
+                rbg[mask > 0] = (255, 0, 0)
+                ret, buffer = cv2.imencode('.jpg', rbg, [cv2.IMWRITE_JPEG_QUALITY, 70])
             else:
                 ret, buffer = cv2.imencode('.jpg', y_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
  
