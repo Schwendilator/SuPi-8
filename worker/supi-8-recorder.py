@@ -18,7 +18,7 @@ RES_MAIN = (1600, 1200)
 ROI_NORM = (0.2, 0.0, 0.75, 1.0)
 ROTATE_180 = True
 BITRATE = 10_000_000
-OUTPUT_PATH = "recordings"
+OUTPUT_PATH = "/mnt/recordings"
 BRIGHTNESS_THRESHOLD = 50
 CHECK_EVERY_S = 0.1
 DEBUG_PRINT_EVERY = 10
@@ -48,7 +48,13 @@ if not os.path.exists(OUTPUT_PATH):
 
 
 # ========= Flask Webserver =========
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "../templates")
+)
+
 picam2 = Picamera2()
 
 
@@ -236,7 +242,7 @@ def camera_worker():
     picam2.set_controls({
         "ScalerCrop": rect,
         "AwbMode": AWB_MODES[AWB_MODE],
-        "Saturation": 1.4,
+        "Saturation": 1.2,
         "Sharpness": 0.2,
         "Contrast": 0.9,
         "NoiseReductionMode": 0
@@ -307,6 +313,13 @@ def camera_worker():
                 elif recording and stream_active and not preview_while_recording:
                     picam2.stop_encoder()
                     recording = False
+                    mp4_filename = filename.replace(".h264", ".mp4")
+                    threading.Thread(
+                        target=mux_and_remove_raw, 
+                        args=(filename, mp4_filename, FPS),
+                        daemon=True
+                    ).start()
+                                        
                     print("Recording stopped (preview)")
 
             loop_count += 1

@@ -1,14 +1,14 @@
 #!/bin/bash
-set -e
-echo "Starting WiFi Setup for SuPi-8"
 
-apt update
-DEBIAN_FRONTEND=noninteractive apt install -y iptables-persistent dnsmasq
+set -e
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Plase run as root (sudo)." >&2
+    exit 1
+fi
 
 HOTSPOT_PASS="Classic!"
 INTERFACE="wlan0"
-
-# getting MAC Adress - last 4 digits
 
 MAC=$(cat /sys/class/net/$INTERFACE/address | tr -d ':' | tail -c 5 | tr '[:lower:]' '[:upper:]')
 SSID="SuPi-8 $MAC"
@@ -37,7 +37,7 @@ nmcli connection modify supi-8-hotspot \
     wifi-sec.pairwise ccmp \
     wifi-sec.group ccmp \
     wifi-sec.psk "$HOTSPOT_PASS" \
-    connection.autoconnect-priority -1
+    connection.autoconnect no
 
 for conn in $(nmcli -t -f NAME,TYPE connection show | grep wifi | cut -d: -f1); do
     if [ "$conn" != "supi-8-hotspot" ]; then
@@ -57,7 +57,8 @@ address=/#/10.42.0.1
 EOF
 
 systemctl enable dnsmasq
-systemctl stop dnsmasq
+systemctl stop dnsmasq 2>/dev/null || true
+
 
 iptables -t nat -F PREROUTING
 iptables -t nat -A PREROUTING -i $INTERFACE -p tcp --dport 80 -j REDIRECT --to-port 5091
@@ -87,7 +88,7 @@ case "$2" in
         fi
         ;;
     down)
-        sleep 5
+        sleep 15
         ACTIVE=$(nmcli -t -f NAME,DEVICE con show --active | awk -F: '$2=="wlan0"{print $1}')
         if [ -z "$ACTIVE" ]; then
             logger "SuPi-8: No WiFi after drop - starting hotspot"
@@ -105,8 +106,10 @@ chmod +x /etc/NetworkManager/dispatcher.d/50-supi8-wifi
 echo "Connection going down for a moment!"
 systemctl restart NetworkManager
 
+
 echo ""
-echo "Setup Done!"
 echo "Hotspot SSID:     $SSID"
 echo "Hotspot Password: $HOTSPOT_PASS"
 echo "Hotspot IP:       10.42.0.1"
+
+sleep 2
