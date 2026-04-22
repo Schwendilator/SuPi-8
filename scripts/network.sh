@@ -7,7 +7,7 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-HOTSPOT_PASS="Classic!"
+HOTSPOT_PASS="${HOTSPOT_PASS:-Classic!}"
 INTERFACE="wlan0"
 
 MAC=$(cat /sys/class/net/$INTERFACE/address | tr -d ':' | tail -c 5 | tr '[:lower:]' '[:upper:]')
