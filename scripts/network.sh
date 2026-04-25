@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -25,7 +24,6 @@ nmcli connection add \
     autoconnect yes \
     ssid "$SSID"
 
-# wifi-sec stuff apparently necessary for iPhone    
 nmcli connection modify supi-8-hotspot \
     802-11-wireless.mode ap \
     802-11-wireless.band bg \
@@ -37,7 +35,7 @@ nmcli connection modify supi-8-hotspot \
     wifi-sec.pairwise ccmp \
     wifi-sec.group ccmp \
     wifi-sec.psk "$HOTSPOT_PASS" \
-    connection.autoconnect no
+    connection.autoconnect-priority -1
 
 for conn in $(nmcli -t -f NAME,TYPE connection show | grep wifi | cut -d: -f1); do
     if [ "$conn" != "supi-8-hotspot" ]; then
@@ -59,7 +57,6 @@ EOF
 systemctl enable dnsmasq
 systemctl stop dnsmasq 2>/dev/null || true
 
-
 iptables -t nat -F PREROUTING
 iptables -t nat -A PREROUTING -i $INTERFACE -p tcp --dport 80 -j REDIRECT --to-port 5091
 netfilter-persistent save
@@ -77,12 +74,10 @@ case "$2" in
     up)
         ACTIVE=$(nmcli -t -f NAME,DEVICE con show --active | awk -F: '$2=="wlan0"{print $1}')
         if [[ -n "$ACTIVE" && "$ACTIVE" != "$HOTSPOT" ]]; then
-            # Client WiFi came up — stop hotspot
             logger "SuPi-8: Client WiFi up ($ACTIVE), stopping hotspot"
             nmcli con down "$HOTSPOT" 2>/dev/null || true
             systemctl stop dnsmasq
         elif [[ "$ACTIVE" == "$HOTSPOT" ]]; then
-            # Hotspot came up — start dnsmasq
             logger "SuPi-8: Hotspot up, starting dnsmasq"
             systemctl start dnsmasq
         fi
@@ -91,11 +86,11 @@ case "$2" in
         sleep 15
         ACTIVE=$(nmcli -t -f NAME,DEVICE con show --active | awk -F: '$2=="wlan0"{print $1}')
         if [ -z "$ACTIVE" ]; then
-            logger "SuPi-8: No WiFi after drop - starting hotspot"
+            logger "SuPi-8: No WiFi after drop, starting hotspot"
             nmcli con up "$HOTSPOT"
             systemctl start dnsmasq
         else
-            logger "SuPi-8: WiFi came back ($ACTIVE) - staying in client mode"
+            logger "SuPi-8: WiFi came back ($ACTIVE), staying in client mode"
         fi
         ;;
 esac
@@ -106,10 +101,8 @@ chmod +x /etc/NetworkManager/dispatcher.d/50-supi8-wifi
 echo "Connection going down for a moment!"
 systemctl restart NetworkManager
 
-
 echo ""
 echo "Hotspot SSID:     $SSID"
 echo "Hotspot Password: $HOTSPOT_PASS"
 echo "Hotspot IP:       10.42.0.1"
-
 sleep 2
