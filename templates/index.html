@@ -244,10 +244,10 @@
             const slider = document.getElementById('peaking-threshold');
             slider.value = d.peaking_threshold;
             document.getElementById('peaking-value').textContent = d.peaking_threshold;
+            window.FOCUS_MAX = d.focus_max || 4500;
             setActiveAwb(d.awb);
         });
         // Poll camera status every 500ms
-        const FOCUS_MAX = 4500;
         async function pollStatus() {
             try {
                 const res = await fetch('/get_status');

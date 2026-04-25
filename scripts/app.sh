@@ -16,17 +16,18 @@ if ! id -u "$APP_USER" >/dev/null 2>&1; then
 fi
 
 if id -u "$APP_USER" >/dev/null 2>&1; then
-    usermod -a -G video,render "$APP_USER"
+    usermod -a -G video,render,gpio,spi  "$APP_USER"
+
 fi
 
 install -d -o "$APP_USER" -g "$APP_USER" "$APP_HOME"
 
-test -f "$REPO_DIR/worker/supi-8-recorder.py" || {
-    echo "ERROR: supi-8-recorder.py not found in $REPO_DIR/worker"
+test -f "$REPO_DIR/worker/supi-8.py" || {
+    echo "ERROR: supi-8.py not found in $REPO_DIR/worker"
     exit 1
 }
 
 cp -r "$REPO_DIR/worker" "$APP_HOME/"
 cp -r "$REPO_DIR/templates" "$APP_HOME/"
 chown -R "$APP_USER:$APP_USER" "$APP_HOME"
-chmod +x "$APP_HOME/worker/supi-8-recorder.py"
+chmod +x -R "$APP_HOME/worker/"
