@@ -39,6 +39,7 @@ class LEDController:
 
     def stop(self):
         self._running = False
+        self._thread.join(timeout=2)
         self.strip.setPixelColor(RECLED, OFF)
         self.strip.setPixelColor(STATLED, OFF)
         self.strip.show()

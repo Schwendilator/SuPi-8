@@ -89,8 +89,8 @@ export HOTSPOT_PASS
 export HOTSPOT_PASS
 
 
-run "System" system.sh
 run "Storage" storage.sh
+run "System" system.sh
 run "App" app.sh
 run "Services" services.sh
 run "Network" network.sh
@@ -118,7 +118,8 @@ read -r -p "Reboot now? (y/n): " answer
 case "$answer" in
     y|Y|yes|YES)
         echo "Rebooting..."
-        reboot
+        (sleep 2; reboot) &
+        exit 0
         ;;
     *)
         echo "Reboot cancelled. Please reboot manually."

@@ -98,9 +98,6 @@ DISPATCHER
 
 chmod +x /etc/NetworkManager/dispatcher.d/50-supi8-wifi
 
-echo "Connection going down for a moment!"
-systemctl restart NetworkManager
-
 echo ""
 echo "Hotspot SSID:     $SSID"
 echo "Hotspot Password: $HOTSPOT_PASS"

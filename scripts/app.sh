@@ -13,6 +13,7 @@ REPO_DIR="${1:-$(pwd)}"
 
 if ! id -u "$APP_USER" >/dev/null 2>&1; then
     useradd -r -m -d "$APP_HOME" -s /usr/sbin/nologin "$APP_USER"
+    echo "Added user -supi-"
 fi
 
 if id -u "$APP_USER" >/dev/null 2>&1; then

@@ -20,6 +20,3 @@ systemctl daemon-reload
 
 systemctl enable supi-8.service
 # systemctl enable usb-watchdog.service -> currently quite buggy
-
-systemctl start supi-8.service
-# systemctl start usb-watchdog.service -> currently quite buggy
