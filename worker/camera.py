@@ -3,6 +3,7 @@ import os
 import threading
 import traceback
 import subprocess
+import json
 import numpy as np
 from datetime import datetime
 from picamera2 import Picamera2
@@ -13,20 +14,25 @@ from libcamera import Transform, controls
 # Settings
 FPS                  = 18
 RES_MAIN             = (1600, 1200)
-ROI_NORM             = (0.2, 0.0, 0.75, 1.0)
+ROI_NORM             = (0.05, 0.0, 0.75, 1.0)
 ROTATE_180           = True
-BITRATE              = 10_000_000
 OUTPUT_PATH          = "/mnt/recordings"
-BRIGHTNESS_THRESHOLD = 50
 CHECK_EVERY_S        = 0.1
 DEBUG_PRINT_EVERY    = 10
 LORES_SIZE           = (640, 480)
 NUM_SAMPLES          = 3
-AWB_MODE             = "Auto"
-PEAKING_THRESHOLD    = 75
 FOCUS_MAX            = 4500
 GAIN_TOO_HIGH        = 10.0
 GAIN_TOO_LOW         = 1.1
+
+BITRATE              = 10_000_000
+BRIGHTNESS_THRESHOLD = 50
+AWB_MODE             = "Auto"
+PEAKING_THRESHOLD    = 75
+
+CONFIG_PATH          = os.path.join(os.path.dirname(__file__), "config.json")
+
+_DEFAULTS = BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD
 
 AWB_MODES = {
     "Tungsten":    controls.AwbModeEnum.Tungsten,
@@ -68,6 +74,7 @@ def mux_and_remove_raw(raw_file, mp4_file, fps):
 
 # Camera worker
 def camera_worker():
+    print("Camera worker started")
     global camera_status
     frame_us = int(round(1_000_000 / FPS))
     camera_controls = {
@@ -97,7 +104,7 @@ def camera_worker():
         "Saturation": 1.2,
         "Sharpness": 0.2,
         "Contrast": 0.9,
-        "NoiseReductionMode": 0
+        "NoiseReductionMode": 0,
     })
 
     recording = False
@@ -152,7 +159,7 @@ def camera_worker():
                     print("Recording stopped, muxing in background...")
             else:
                 consecutive_dark_count = 0
-                if not recording and (not stream_active or preview_while_recording):
+                if not recording and (not stream_active or preview_while_recording) and focus > 750:
                     filename = os.path.join(OUTPUT_PATH, datetime.now().strftime("%y-%m-%d_%H-%M-%S") + ".h264")
                     encoder = H264Encoder(bitrate=BITRATE, framerate=FPS, enable_sps_framerate=True)
                     output = FileOutput(filename)
@@ -174,6 +181,56 @@ def camera_worker():
             time.sleep(CHECK_EVERY_S)
     except Exception:
         traceback.print_exc()
+
+
+# Config persistence
+def save_config():
+    config = {
+        "bitrate": BITRATE // 1_000_000,
+        "brightness_threshold": BRIGHTNESS_THRESHOLD,
+        "awb_mode": AWB_MODE,
+        "peaking_threshold": PEAKING_THRESHOLD,
+    }
+    tmp = CONFIG_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(config, f)
+    os.replace(tmp, CONFIG_PATH)
+    print(f"Config saved: {config}")
+
+
+def load_config():
+    if not os.path.exists(CONFIG_PATH):
+        return
+    try:
+        with open(CONFIG_PATH) as f:
+            config = json.load(f)
+    except Exception as e:
+        print(f"Error loading config: {e}")
+        return
+    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD
+    if "bitrate" in config:
+        BITRATE = config["bitrate"] * 1_000_000
+    if "brightness_threshold" in config:
+        BRIGHTNESS_THRESHOLD = config["brightness_threshold"]
+    if "awb_mode" in config and config["awb_mode"] in AWB_MODES:
+        AWB_MODE = config["awb_mode"]
+    if "peaking_threshold" in config:
+        PEAKING_THRESHOLD = config["peaking_threshold"]
+    print(f"Config loaded: {config}")
+
+
+def reset_config():
+    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD
+    BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD = _DEFAULTS
+    if os.path.exists(CONFIG_PATH):
+        os.remove(CONFIG_PATH)
+    try:
+        picam2.set_controls({"AwbMode": AWB_MODES[AWB_MODE]})
+    except Exception:
+        pass
+
+
+load_config()
 
 
 def start():

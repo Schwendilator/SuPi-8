@@ -13,12 +13,10 @@ Group=supi
 
 WorkingDirectory=/opt/supi
 
-ExecStart=/usr/bin/python3 /opt/supi/worker/supi-8.py
+ExecStart=/usr/bin/python3 -u /opt/supi/worker/supi-8.py
 
 Restart=on-failure
 RestartSec=3
-
-Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target

@@ -34,9 +34,6 @@
         .rec-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #555; margin-right: 5px; }
         .rec-dot.active { background: #dc3545; animation: blink 1s step-start infinite; }
         @keyframes blink { 50% { opacity: 0; } }
-        .peaking-controls { display: flex; align-items: center; gap: 10px; }
-        .peaking-controls input[type=range] { flex: 1; accent-color: #dc3545; }
-        .peaking-value { font-size: 0.9em; color: #aaa; min-width: 28px; text-align: right; }
         .file-entry { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .file-entry:last-child { border-bottom: none; }
         .file-name { color: #007bff; flex: 1; text-align: left; font-size: 0.95em; text-decoration: none; }
@@ -51,7 +48,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎞️ SuPi-8</h1>
+        <div style="position: relative; margin-bottom: 4px;">
+            <h1 style="margin: 0;">🎞️ SuPi-8</h1>
+            <a href="/setup" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: #333; color: #aaa; border: 1px solid #444; border-radius: 6px; padding: 6px 14px; text-decoration: none; font-size: 0.8em; letter-spacing: 0.05em;">SETUP</a>
+        </div>
         <div class="preview-wrapper">
             <div class="preview-box">
                 <img id="stream" src="" style="display: none;">
@@ -87,13 +87,12 @@
         <div class="config-box">
             <div class="config-row">
                 <label>Focus Peaking</label>
-                <div class="peaking-controls">
-                    <input type="range" id="peaking-threshold" min="10" max="150" value="75" oninput="updatePeakingThreshold(this.value)">
-                    <span class="peaking-value" id="peaking-value">75</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
                     <label class="switch">
                         <input type="checkbox" id="peaking-toggle" onchange="togglePeaking()">
                         <span class="slider"></span>
                     </label>
+                    <input type="number" id="peaking-threshold" min="10" max="150" value="75" onchange="updatePeakingThreshold()">
                 </div>
             </div>        
             <div class="config-row">
@@ -128,7 +127,7 @@
             </div>
         </div>
 
-        <h3>Aufnahmen</h3>
+        <h3>Recordings</h3>
         <div class="file-list" id="file-list">
             {% for file in files %}
                 <div class="file-entry" id="entry-{{ file.name }}">
@@ -141,6 +140,7 @@
                 </div>
             {% endfor %}
         </div>
+
     </div>
 
     <script>
@@ -175,18 +175,14 @@
             });
         }
 
-        let peakingTimer = null;
-        function updatePeakingThreshold(value) {
-            document.getElementById('peaking-value').textContent = value;
-            clearTimeout(peakingTimer);
-            peakingTimer = setTimeout(async () => {
-                const enabled = document.getElementById('peaking-toggle').checked;
-                await fetch('/set_peaking', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({enabled: enabled, threshold: parseInt(value)})
-                });
-            }, 300);
+        async function updatePeakingThreshold() {
+            const enabled = document.getElementById('peaking-toggle').checked;
+            const threshold = parseInt(document.getElementById('peaking-threshold').value);
+            await fetch('/set_peaking', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enabled: enabled, threshold: threshold})
+            });
         }
 
         async function deleteFile(filename) {
@@ -241,9 +237,7 @@
             document.getElementById('bitrate-input').value = d.bitrate;
             document.getElementById('preview-toggle').checked = d.preview_while_recording;
             document.getElementById('peaking-toggle').checked = d.focus_peaking;
-            const slider = document.getElementById('peaking-threshold');
-            slider.value = d.peaking_threshold;
-            document.getElementById('peaking-value').textContent = d.peaking_threshold;
+            document.getElementById('peaking-threshold').value = d.peaking_threshold;
             window.FOCUS_MAX = d.focus_max || 4500;
             setActiveAwb(d.awb);
         });

@@ -1,6 +1,7 @@
 import os
 import cv2
 import time
+import threading
 import subprocess
 from flask import Flask, render_template, send_from_directory, Response, request, jsonify, redirect
 
@@ -8,6 +9,7 @@ import camera
 
 # Flask Setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+APP_HOME = os.path.dirname(BASE_DIR)
 
 app = Flask(
     __name__,
@@ -85,6 +87,7 @@ def set_config():
         camera.FPS = int(data['fps'])
     if 'bitrate' in data:
         camera.BITRATE = int(data['bitrate']) * 1_000_000
+    camera.save_config()
     return jsonify({'status': 'ok',
                     'threshold': camera.BRIGHTNESS_THRESHOLD,
                     'fps': camera.FPS,
@@ -119,6 +122,7 @@ def set_awb():
         camera.AWB_MODE = mode
         camera.picam2.set_controls({"AwbMode": camera.AWB_MODES[mode]})
         print(f"AWB: {mode}")
+    camera.save_config()
     return jsonify({'status': 'ok', 'awb': camera.AWB_MODE})
 
 
@@ -148,9 +152,106 @@ def set_peaking():
         camera.focus_peaking = bool(data['enabled'])
     if 'threshold' in data:
         camera.PEAKING_THRESHOLD = int(data['threshold'])
+    camera.save_config()
     return jsonify({'status': 'ok',
                     'focus_peaking': camera.focus_peaking,
                     'peaking_threshold': camera.PEAKING_THRESHOLD})
+
+
+@app.route('/reset_config', methods=['POST'])
+def reset_config():
+    camera.reset_config()
+    return jsonify({'status': 'ok', 'message': 'Config reset to defaults'})
+
+
+@app.route('/update', methods=['POST'])
+def update():
+    if 'file' not in request.files:
+        return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
+    file = request.files['file']
+    if file.filename == '' or not file.filename.endswith('.tar.gz'):
+        return jsonify({'status': 'error', 'message': 'File must be a .tar.gz archive'}), 400
+
+    tmp_path = '/tmp/supi-update.tar.gz'
+    file.save(tmp_path)
+
+    def _apply():
+        time.sleep(0.5)
+        subprocess.run(['sudo', '/usr/local/bin/apply-update.sh', tmp_path])
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+    threading.Thread(target=_apply, daemon=True).start()
+    return jsonify({'status': 'ok', 'message': 'Update applied, restarting...'})
+
+
+@app.route('/setup')
+def setup():
+    return render_template('setup.html')
+
+
+@app.route('/setup/connect_wifi', methods=['POST'])
+def setup_connect_wifi():
+    data = request.get_json()
+    ssid = data.get('ssid', '').strip()
+    password = data.get('password', '')
+    if not ssid:
+        return jsonify({'status': 'error', 'message': 'SSID required'}), 400
+    try:
+        subprocess.run(['sudo', 'nmcli', 'device', 'wifi', 'connect', ssid, 'password', password],
+                       check=True, capture_output=True, text=True)
+        return jsonify({'status': 'ok',
+                        'message': f'Connected to {ssid}. The device will be available on your network shortly.'})
+    except subprocess.CalledProcessError as e:
+        msg = e.stderr.strip() if e.stderr else 'Connection failed'
+        return jsonify({'status': 'error', 'message': msg}), 500
+
+
+@app.route('/setup/factory_reset', methods=['POST'])
+def setup_factory_reset():
+    try:
+        camera.reset_config()
+        subprocess.run(['sudo', 'nmcli', 'connection', 'modify', 'supi-8-hotspot',
+                        'wifi-sec.psk', 'Classic!'], check=True)
+        for conn in subprocess.run(['sudo', 'nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show'],
+                                   capture_output=True, text=True, check=True).stdout.strip().split('\n'):
+            parts = conn.split(':')
+            if len(parts) == 2 and parts[1] == 'wifi' and parts[0] != 'supi-8-hotspot':
+                subprocess.run(['sudo', 'nmcli', 'connection', 'delete', parts[0]], check=False)
+        return jsonify({'status': 'ok', 'message': 'Factory reset complete. Hotspot password: Classic!'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/setup/backups')
+def setup_backups():
+    backups = []
+    pattern = "backup-*.tar.gz"
+    for f in sorted(os.listdir(APP_HOME), reverse=True):
+        if f.startswith("backup-") and f.endswith(".tar.gz"):
+            path = os.path.join(APP_HOME, f)
+            size = os.path.getsize(path)
+            backups.append({"name": f, "size": f"{size / 1024:.0f} KB"})
+    return jsonify(backups)
+
+
+@app.route('/setup/restore_backup', methods=['POST'])
+def setup_restore_backup():
+    data = request.get_json()
+    name = data.get('name', '')
+    if not name or '..' in name or '/' in name:
+        return jsonify({'status': 'error', 'message': 'Invalid backup name'}), 400
+    backup_path = os.path.join(APP_HOME, name)
+    if not os.path.exists(backup_path):
+        return jsonify({'status': 'error', 'message': 'Backup not found'}), 404
+    try:
+        import tarfile
+        with tarfile.open(backup_path, 'r:gz') as tar:
+            tar.extractall(path=APP_HOME)
+        subprocess.run(['sudo', 'systemctl', 'restart', 'supi-8.service'], check=True)
+        return jsonify({'status': 'ok', 'message': f'Restored {name}, restarting...'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 # Captive portal

@@ -89,6 +89,7 @@ export HOTSPOT_PASS
 export HOTSPOT_PASS
 
 
+run "Clean" clean.sh
 run "Storage" storage.sh
 run "System" system.sh
 run "App" app.sh

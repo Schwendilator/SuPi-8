@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SuPi-8 Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #111; color: #eee; margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 0 auto; padding: 10px; }
+        .box { background: #222; border-radius: 10px; margin: 10px auto; padding: 15px; text-align: left; }
+        .box h3 { margin: 0 0 12px 0; font-size: 1em; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; }
+        .btn { padding: 12px; margin: 5px 0; border-radius: 5px; border: none; cursor: pointer; font-size: 16px; width: 100%; display: block; }
+        .btn-start { background: #28a745; color: white; }
+        .btn-stop { background: #dc3545; color: white; }
+        .btn-warn { background: #ffc107; color: #111; }
+        .btn-link { background: none; color: #007bff; border: none; cursor: pointer; font-size: 0.85em; padding: 4px 0; }
+        .btn-link:hover { text-decoration: underline; }
+        input[type=text], input[type=password] { background: #333; color: #eee; border: 1px solid #555; border-radius: 5px; padding: 10px; font-size: 1em; width: 100%; box-sizing: border-box; }
+        .row { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; }
+        .row label { font-size: 0.85em; color: #aaa; }
+        .status { font-size: 0.85em; color: #aaa; margin-top: 4px; }
+        .status.ok { color: #28a745; }
+        .status.err { color: #dc3545; }
+        input[type=file] { color: #eee; font-size: 0.9em; }
+        a.back { background: #333; color: #ddd; border: 1px solid #444; border-radius: 6px; padding: 6px 14px; text-decoration: none; font-size: 0.8em; display: inline-block; margin-bottom: 10px; letter-spacing: 0.05em; }
+        a.back:hover { background: #3a3a3a; }
+        .backup-entry { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333; font-size: 0.9em; }
+        .backup-entry:last-child { border-bottom: none; }
+        .backup-entry .name { color: #ccc; flex: 1; }
+        .backup-entry .size { color: #888; margin: 0 12px; white-space: nowrap; }
+        .btn-small { background: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 0.85em; }
+        .btn-small:hover { background: #a71d2a; }
+        .no-backups { color: #666; font-size: 0.9em; margin: 8px 0; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back">← Back to Dashboard</a>
+        <h1>SuPi-8 Setup</h1>
+
+        <div class="box">
+            <h3>Wi-Fi Client</h3>
+            <div class="row">
+                <label>Network Name (SSID)</label>
+                <input type="text" id="wifi-ssid" placeholder="Enter SSID">
+            </div>
+            <div class="row">
+                <label>Password</label>
+                <input type="password" id="wifi-password" placeholder="Enter password">
+            </div>
+            <button class="btn btn-start" onclick="connectWifi()">Connect</button>
+            <div class="status" id="wifi-status"></div>
+        </div>
+
+        <div class="box">
+            <h3>Firmware Update</h3>
+            <div class="row">
+                <label>Upload archive (.tar.gz)</label>
+                <input type="file" id="update-file" accept=".tar.gz">
+            </div>
+            <button class="btn btn-start" onclick="applyUpdate()" id="update-btn">Upload & Update</button>
+            <div class="status" id="update-status"></div>
+        </div>
+
+        <div class="box">
+            <h3>Restore Backup</h3>
+            <div id="backup-list"><div class="no-backups">Loading...</div></div>
+            <div class="status" id="restore-status"></div>
+        </div>
+
+        <div class="box">
+            <h3>Factory Reset</h3>
+            <p style="font-size: 0.85em; color: #aaa; margin: 0 0 8px 0;">
+                Resets camera settings, hotspot password to <strong>Classic!</strong>, and removes saved Wi-Fi networks.
+            </p>
+            <button class="btn btn-warn" onclick="factoryReset()">Factory Reset</button>
+            <div class="status" id="reset-status"></div>
+        </div>
+    </div>
+
+    <script>
+        async function connectWifi() {
+            const ssid = document.getElementById('wifi-ssid').value;
+            const password = document.getElementById('wifi-password').value;
+            const status = document.getElementById('wifi-status');
+            if (!ssid) { status.textContent = 'Please enter a network name'; return; }
+            status.className = 'status';
+            status.textContent = 'Connecting...';
+            try {
+                const res = await fetch('/setup/connect_wifi', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ssid: ssid, password: password})
+                });
+                const d = await res.json();
+                status.className = d.status === 'ok' ? 'status ok' : 'status err';
+                status.textContent = d.message;
+            } catch(e) {
+                status.className = 'status err';
+                status.textContent = 'Connection failed';
+            }
+        }
+
+        async function applyUpdate() {
+            const fileInput = document.getElementById('update-file');
+            const status = document.getElementById('update-status');
+            const btn = document.getElementById('update-btn');
+            if (!fileInput.files.length) {
+                status.textContent = 'Please select a .tar.gz file first';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            btn.disabled = true;
+            status.className = 'status';
+            status.textContent = 'Uploading...';
+            try {
+                const res = await fetch('/update', { method: 'POST', body: formData });
+                const d = await res.json();
+                status.className = d.status === 'ok' ? 'status ok' : 'status err';
+                status.textContent = d.message;
+            } catch(e) {
+                status.className = 'status err';
+                status.textContent = 'Update failed';
+                btn.disabled = false;
+            }
+        }
+
+        async function loadBackups() {
+            const container = document.getElementById('backup-list');
+            try {
+                const res = await fetch('/setup/backups');
+                const backups = await res.json();
+                if (!backups.length) {
+                    container.innerHTML = '<div class="no-backups">No backups found</div>';
+                    return;
+                }
+                container.innerHTML = backups.map(b => `
+                    <div class="backup-entry">
+                        <span class="name">${b.name}</span>
+                        <span class="size">${b.size}</span>
+                        <button class="btn-small" onclick="restoreBackup('${b.name}')">Restore</button>
+                    </div>
+                `).join('');
+            } catch(e) {
+                container.innerHTML = '<div class="no-backups">Failed to load backups</div>';
+            }
+        }
+
+        async function restoreBackup(name) {
+            if (!confirm(`Restore ${name}? The device will restart.`)) return;
+            const status = document.getElementById('restore-status');
+            status.className = 'status';
+            status.textContent = 'Restoring...';
+            try {
+                const res = await fetch('/setup/restore_backup', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: name})
+                });
+                const d = await res.json();
+                status.className = d.status === 'ok' ? 'status ok' : 'status err';
+                status.textContent = d.message;
+            } catch(e) {
+                status.className = 'status err';
+                status.textContent = 'Restore failed';
+            }
+        }
+
+        async function factoryReset() {
+            if (!confirm('This will reset all settings to factory defaults. Continue?')) return;
+            if (!confirm('Hotspot password will be reset to "Classic!". Are you sure?')) return;
+            const status = document.getElementById('reset-status');
+            status.className = 'status';
+            status.textContent = 'Resetting...';
+            try {
+                const res = await fetch('/setup/factory_reset', { method: 'POST' });
+                const d = await res.json();
+                status.className = d.status === 'ok' ? 'status ok' : 'status err';
+                status.textContent = d.message;
+            } catch(e) {
+                status.className = 'status err';
+                status.textContent = 'Reset failed';
+            }
+        }
+
+        loadBackups();
+    </script>
+</body>
+</html>

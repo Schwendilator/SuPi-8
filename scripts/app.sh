@@ -32,3 +32,15 @@ cp -r "$REPO_DIR/worker" "$APP_HOME/"
 cp -r "$REPO_DIR/templates" "$APP_HOME/"
 chown -R "$APP_USER:$APP_USER" "$APP_HOME"
 chmod +x -R "$APP_HOME/worker/"
+
+
+cat > /etc/sudoers.d/supi <<EOF
+# SuPi-8: passwordless sudo for specific commands
+supi ALL=(ALL) NOPASSWD: /usr/bin/date
+supi ALL=(ALL) NOPASSWD: /usr/bin/systemctl
+supi ALL=(ALL) NOPASSWD: /usr/bin/nmcli
+supi ALL=(ALL) NOPASSWD: /usr/local/bin/apply-update.sh
+EOF
+
+chmod 440 /etc/sudoers.d/supi
+echo "sudoers configured for user supi"
