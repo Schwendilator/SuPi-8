@@ -22,7 +22,7 @@ The sensor sits at the film gate position where the film would normally run. A 3
 
 - 1× compression spring, 1 × 6 × 20 mm (DIN 2095), ~4 mm inner Ø (colloquially known as a "ball-pen spring")
 - 1× M3 threaded rod, 70 mm
-- 2× M3 nuts
+- 1× M3 nut
 - 1× M3 knurled nut, high form (DIN 466)
 - 3× M2.5×4 threaded inserts
 - 1× M3×6 threaded insert
@@ -36,6 +36,7 @@ The sensor sits at the film gate position where the film would normally run. A 3
 - Soldering iron + a bit of wire
 - Sharp thin blade (scalpel or razor blade), for lens removal
 - A 3D-Printer and a bit of filament
+- Glue to attach the sensor, the USB-C port and the charging controller
 
 ## Preparation
 
@@ -44,6 +45,47 @@ Before assembly, the lens has to be removed from the Camera Module 3 so the bare
 1. Gently warm the lens holder (e.g. with a hot air gun on low, or a hairdryer) — this softens the adhesive holding the lens assembly to the sensor board.
 2. While warm, carefully work a sharp, thin blade (scalpel or razor blade) under the edge of the lens holder and slowly pry it loose. Go slowly and reheat if it resists — the sensor underneath is fragile and easily scratched or cracked.
 3. Once removed, keep the sensor covered/protected until it's mounted in the cartridge to avoid dust on the die.
+
+## Assembly
+
+### 1. Print the case
+
+Print the cartridge housing — ideally in a filament with some heat resistance (e.g. ABS/ASA/PETG), since it sits close to a working camera.
+
+### 2. Wire the electronics
+
+Easiest done on the bench before anything goes into the case:
+
+1. Solder a JST cable to the battery.
+2. Solder a matching JST socket to the MH-CD42, along with wires for VIN (5V in) and OUT + GND (5V out).
+3. Solder the VIN wires to the USB-C socket (this is the charging input).
+4. Solder the OUT and GND wires to the Pi's 5V/GND header pins (physical pin 4 = 5V, pin 6 = GND) — this powers the Pi directly through the GPIO header instead of its own USB port.
+5. Solder wires for the LEDs to 5V (physical pin 2) and GND, plus a data wire to GPIO10 (physical pin 19).
+6. Chain the two LED modules together (data-out → data-in).
+7. Solder the wires from step 5 onto the first LED module.
+8. Glue both LED modules into the lid and cover the solder joints with insulation tape.
+
+### 3. Prepare the housing
+
+Press in the threaded inserts: 4× M2 for the Camera Module 3 board, 3× M2.5 for the Pi, and 1× M3 into the sensor holder.
+
+### 4. Build the sensor/focus assembly
+
+1. Screw the M3 threaded rod into the sensor holder and lock it with the M3 nut, then slide the spring onto the rod.
+2. **Carefully** glue the bare sensor onto the sensor holder and connect it with the Arducam extension cable.
+3. Connect the ribbon cable and the Arducam B0439 extension cable to the Camera Module 3 board.
+4. Screw the Camera Module board down with the 4× M2×6 screws, with the Arducam connector facing down.
+
+### 5. Final assembly
+
+1. Slide the sensor holder (with rod and spring) into the housing and lock it in place with the knurled nut.
+2. Glue the USB-C socket into position.
+3. Glue the MH-CD42 charging board into position.
+4. Glue the battery into position.
+5. Fold the Raspberry Pi camera cable so it fits inside the housing and connect it to the Pi.
+6. Screw the Pi down with the single M2.5 (DIN 912) screw in the center mounting hole.
+7. Plug the battery's JST connector into the MH-CD42.
+8. Close the lid and screw it shut.
 
 ## Quick Start
 
@@ -82,8 +124,6 @@ sudo bash setup.sh
 
 Set a hotspot password (or press Enter for `Classic!`). The installer does everything — partitions the SD card, installs dependencies, deploys the app, creates the hotspot. Reboot when prompted.
 
-> Building your own release image? Keep the exFAT placeholder partition small (e.g. 200 MB) when partitioning in step 1 — SuPi-8's first-boot service (`supi8-storage.service`) will grow and reformat it to fill whatever card the end user actually flashes, so the placeholder's size only affects how big your distributed `.img` file is, not the final usable storage.
-
 ### Connect
 
 The Pi creates a Wi-Fi hotspot:
@@ -102,9 +142,12 @@ The camera fires at 18 fps by default (adjustable in the web UI). Recording star
 
 ## Web UI
 
-**Dashboard** (`/`): Live preview with optional focus peaking overlay, brightness/gain/temp/focus readouts, controls for FPS, threshold, bitrate, white balance.
+**Dashboard:** Live preview with optional focus peaking overlay, brightness/gain/temp/focus readouts, controls for FPS, threshold, bitrate, white balance.
 
-**Setup** (`/setup`): Connect to Wi-Fi, upload firmware updates, restore previous versions, factory reset.
+**Setup:** Connect to Wi-Fi, upload firmware updates, restore previous versions, factory reset.
+
+Vibe Coded with Claude, because I don't like doning frontends.
+
 
 ## Updating
 
