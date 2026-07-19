@@ -230,11 +230,116 @@ def setup_connect_wifi():
     try:
         subprocess.run(['sudo', 'nmcli', 'device', 'wifi', 'connect', ssid, 'password', password],
                        check=True, capture_output=True, text=True)
+        subprocess.run(['sudo', 'nmcli', 'connection', 'modify', ssid,
+                        'connection.autoconnect', 'yes'], check=False)
         return jsonify({'status': 'ok',
                         'message': f'Connected to {ssid}. The device will be available on your network shortly.'})
     except subprocess.CalledProcessError as e:
         msg = e.stderr.strip() if e.stderr else 'Connection failed'
         return jsonify({'status': 'error', 'message': msg}), 500
+
+
+@app.route('/setup/network_status')
+def setup_network_status():
+    try:
+        active_out = subprocess.run(
+            ['sudo', 'nmcli', '-t', '-f', 'NAME,DEVICE', 'connection', 'show', '--active'],
+            capture_output=True, text=True, check=True
+        ).stdout.strip()
+        active_name = None
+        for line in active_out.split('\n'):
+            parts = line.split(':')
+            if len(parts) == 2 and parts[1] == 'wlan0':
+                active_name = parts[0]
+                break
+
+        hotspot_ssid = subprocess.run(
+            ['sudo', 'nmcli', '-g', '802-11-wireless.ssid', 'connection', 'show', 'supi-8-hotspot'],
+            capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+        if active_name == 'supi-8-hotspot':
+            mode = 'ap'
+        elif active_name:
+            mode = 'client'
+        else:
+            mode = 'none'
+
+        return jsonify({'status': 'ok', 'mode': mode, 'active_ssid': active_name, 'hotspot_ssid': hotspot_ssid})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/setup/set_mode', methods=['POST'])
+def setup_set_mode():
+    data = request.get_json(silent=True) or {}
+    mode = data.get('mode')
+    if mode not in ('ap', 'client'):
+        return jsonify({'status': 'error', 'message': "mode must be 'ap' or 'client'"}), 400
+
+    def _apply():
+        time.sleep(1.5)
+        try:
+            listing = subprocess.run(
+                ['sudo', 'nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show'],
+                capture_output=True, text=True, check=True
+            ).stdout.strip()
+            other_wifi = [
+                line.split(':')[0] for line in listing.split('\n')
+                if len(line.split(':')) == 2 and line.split(':')[1] == 'wifi'
+                and line.split(':')[0] != 'supi-8-hotspot'
+            ]
+
+            if mode == 'ap':
+                for name in other_wifi:
+                    subprocess.run(['sudo', 'nmcli', 'connection', 'modify', name,
+                                    'connection.autoconnect', 'no'], check=False)
+                subprocess.run(['sudo', 'nmcli', 'connection', 'up', 'supi-8-hotspot'], check=False)
+            else:
+                for name in other_wifi:
+                    subprocess.run(['sudo', 'nmcli', 'connection', 'modify', name,
+                                    'connection.autoconnect', 'yes'], check=False)
+                subprocess.run(['sudo', 'nmcli', 'connection', 'down', 'supi-8-hotspot'], check=False)
+        except Exception as e:
+            print(f"set_mode failed: {e}")
+
+    threading.Thread(target=_apply, daemon=True).start()
+    return jsonify({'status': 'ok', 'message': f'Switching to {"hotspot" if mode == "ap" else "Wi-Fi client"} mode...'})
+
+
+@app.route('/setup/hotspot_settings', methods=['POST'])
+def setup_hotspot_settings():
+    data = request.get_json(silent=True) or {}
+    ssid = data.get('ssid', '').strip()
+    password = data.get('password', '')
+
+    if not ssid:
+        return jsonify({'status': 'error', 'message': 'SSID required'}), 400
+    if len(password) < 8:
+        return jsonify({'status': 'error', 'message': 'Password must be at least 8 characters'}), 400
+
+    try:
+        subprocess.run(['sudo', 'nmcli', 'connection', 'modify', 'supi-8-hotspot',
+                        '802-11-wireless.ssid', ssid], check=True, capture_output=True, text=True)
+        subprocess.run(['sudo', 'nmcli', 'connection', 'modify', 'supi-8-hotspot',
+                        'wifi-sec.psk', password], check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        msg = e.stderr.strip() if e.stderr else 'Failed to update hotspot settings'
+        return jsonify({'status': 'error', 'message': msg}), 500
+
+    def _reapply():
+        time.sleep(1.5)
+        active = subprocess.run(
+            ['sudo', 'nmcli', '-t', '-f', 'NAME,DEVICE', 'connection', 'show', '--active'],
+            capture_output=True, text=True
+        ).stdout.strip()
+        if any(line.startswith('supi-8-hotspot:') for line in active.split('\n')):
+            subprocess.run(['sudo', 'nmcli', 'connection', 'down', 'supi-8-hotspot'], check=False)
+            subprocess.run(['sudo', 'nmcli', 'connection', 'up', 'supi-8-hotspot'], check=False)
+
+    threading.Thread(target=_reapply, daemon=True).start()
+    return jsonify({'status': 'ok',
+                    'message': f'Hotspot updated to "{ssid}". Reconnect with the new name/password if you were on the hotspot.'})
 
 
 @app.route('/setup/factory_reset', methods=['POST'])

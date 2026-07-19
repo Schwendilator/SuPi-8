@@ -38,6 +38,31 @@
         <h1>SuPi-8 Setup</h1>
 
         <div class="box">
+            <h3>Network Mode</h3>
+            <div class="status" id="mode-current" style="margin-bottom: 10px;">Loading...</div>
+            <button class="btn btn-start" onclick="setMode('client')">Use Home Wi-Fi</button>
+            <button class="btn btn-warn" onclick="setMode('ap')">Use Hotspot</button>
+            <div class="status" id="mode-status"></div>
+            <p style="font-size: 0.8em; color: #666; margin: 8px 0 0 0;">
+                The hotspot always comes back automatically if no Wi-Fi connection is available.
+            </p>
+        </div>
+
+        <div class="box">
+            <h3>Hotspot Settings</h3>
+            <div class="row">
+                <label>Hotspot Name (SSID)</label>
+                <input type="text" id="hotspot-ssid" placeholder="SuPi-8">
+            </div>
+            <div class="row">
+                <label>Hotspot Password (min. 8 characters)</label>
+                <input type="password" id="hotspot-password" placeholder="Enter new password">
+            </div>
+            <button class="btn btn-start" onclick="saveHotspotSettings()">Save</button>
+            <div class="status" id="hotspot-status"></div>
+        </div>
+
+        <div class="box">
             <h3>Wi-Fi Client</h3>
             <div class="row">
                 <label>Network Name (SSID)</label>
@@ -78,6 +103,71 @@
     </div>
 
     <script>
+        async function loadNetworkStatus() {
+            const el = document.getElementById('mode-current');
+            try {
+                const res = await fetch('/setup/network_status');
+                const d = await res.json();
+                if (d.status !== 'ok') { el.textContent = 'Status unavailable'; return; }
+                if (d.mode === 'ap') {
+                    el.textContent = `Currently: Hotspot ("${d.hotspot_ssid}")`;
+                } else if (d.mode === 'client') {
+                    el.textContent = `Currently: Connected to "${d.active_ssid}"`;
+                } else {
+                    el.textContent = 'Currently: Not connected';
+                }
+                const ssidField = document.getElementById('hotspot-ssid');
+                if (!ssidField.value) ssidField.placeholder = d.hotspot_ssid || 'SuPi-8';
+            } catch (e) {
+                el.textContent = 'Status unavailable';
+            }
+        }
+
+        async function setMode(mode) {
+            const status = document.getElementById('mode-status');
+            status.className = 'status';
+            status.textContent = 'Switching...';
+            try {
+                const res = await fetch('/setup/set_mode', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({mode: mode})
+                });
+                const d = await res.json();
+                status.className = d.status === 'ok' ? 'status ok' : 'status err';
+                status.textContent = d.status === 'ok'
+                    ? d.message + (mode === 'ap' ? ' Reconnect to the hotspot Wi-Fi in a few seconds.' : ' You may lose this connection if it switches away from the hotspot.')
+                    : d.message;
+            } catch (e) {
+                status.className = 'status';
+                status.textContent = 'Request sent - this connection may drop now.';
+            }
+            setTimeout(loadNetworkStatus, 5000);
+        }
+
+        async function saveHotspotSettings() {
+            const ssid = document.getElementById('hotspot-ssid').value.trim();
+            const password = document.getElementById('hotspot-password').value;
+            const status = document.getElementById('hotspot-status');
+            if (!ssid) { status.className = 'status err'; status.textContent = 'Please enter a hotspot name'; return; }
+            status.className = 'status';
+            status.textContent = 'Saving...';
+            try {
+                const res = await fetch('/setup/hotspot_settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ssid: ssid, password: password})
+                });
+                const d = await res.json();
+                status.className = d.status === 'ok' ? 'status ok' : 'status err';
+                status.textContent = d.message;
+                if (d.status === 'ok') setTimeout(loadNetworkStatus, 5000);
+            } catch (e) {
+                status.className = 'status err';
+                status.textContent = 'Failed to save hotspot settings';
+            }
+        }
+
         async function connectWifi() {
             const ssid = document.getElementById('wifi-ssid').value;
             const password = document.getElementById('wifi-password').value;
@@ -184,6 +274,7 @@
         }
 
         loadBackups();
+        loadNetworkStatus();
     </script>
 </body>
 </html>

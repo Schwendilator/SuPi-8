@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 [Unit]
 Description=SuPi-8 Service
-After=multi-user.target
+After=local-fs.target network.target
 Wants=network.target
 
 [Service]

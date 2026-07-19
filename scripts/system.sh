@@ -23,3 +23,10 @@ echo "dtoverlay=dwc2,dr_mode=peripheral" >> /boot/firmware/config.txt
 echo "core_freq=250" >> /boot/firmware/config.txt
 echo "core_freq_min=250" >> /boot/firmware/config.txt
 echo "blacklist snd_bcm2835" > /etc/modprobe.d/snd-blacklist.conf
+
+
+echo "dtoverlay=disable-bt" >> /boot/firmware/config.txt
+systemctl disable hciuart 2>/dev/null || true
+systemctl disable bluetooth 2>/dev/null || true
+
+echo "hdmi_blanking=2" >> /boot/firmware/config.txt
