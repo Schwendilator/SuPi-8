@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-only
 import os
 import cv2
 import time
@@ -106,6 +107,7 @@ def get_config():
         'focus_max': camera.FOCUS_MAX,
         'gain_too_high': camera.GAIN_TOO_HIGH,
         'awb': camera.AWB_MODE,
+        'roi_x_offset': camera.ROI_X_OFFSET,
     })
 
 
@@ -156,6 +158,16 @@ def set_peaking():
     return jsonify({'status': 'ok',
                     'focus_peaking': camera.focus_peaking,
                     'peaking_threshold': camera.PEAKING_THRESHOLD})
+
+
+@app.route('/set_roi', methods=['POST'])
+def set_roi():
+    data = request.get_json()
+    x = float(data.get('x_offset', camera.ROI_X_OFFSET))
+    x = max(0.0, min(1.0, x))
+    camera.set_roi(x)
+    camera.save_config()
+    return jsonify({'status': 'ok', 'roi_x_offset': camera.ROI_X_OFFSET})
 
 
 @app.route('/reset_config', methods=['POST'])

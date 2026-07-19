@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
 set -e
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -6,56 +7,23 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-DISK="/dev/mmcblk0"
-PART_ROOT="${DISK}p2"
-PART_DATA="${DISK}p3"
+PART_DATA="/dev/mmcblk0p3"
 MOUNTPOINT="/mnt/recordings"
 
 echo "Starting storage setup"
 
-
 if blkid "$PART_DATA" | grep -q "exfat"; then
-    echo "Partition $PART_DATA with exFAT already exists. Nothing to do."
-    mkdir -p "$MOUNTPOINT"
-    mount -a
-    echo "Storage setup skipped (already done)."
-    exit 0
-fi
-
-
-DISK_SIZE_BYTES=$(blockdev --getsize64 "$DISK")
-MIN_SIZE_BYTES=$((10 * 1024 * 1024 * 1024)) # 10 GB in Bytes
-
-if [ "$DISK_SIZE_BYTES" -lt "$MIN_SIZE_BYTES" ]; then
-    echo "Error: SD card is too small ($(($(($DISK_SIZE_BYTES / 1024)) / 1024)) MB)."
-    echo "Minimum 10 GB required to create 8 GB Root + exFAT."
+    echo "Partition $PART_DATA with exFAT found."
+else
+    echo "Error: No exFAT partition at $PART_DATA."
+    echo "See README.md — resize root to 8 GB and create exFAT partition before first boot."
     exit 1
 fi
-
-CURRENT_ROOT_END=$(parted -s "$DISK" unit MB print | grep "^ 2" | awk '{print $3}' | tr -d 'MB' | cut -d. -f1)
-
-if [ "$CURRENT_ROOT_END" -gt 8192 ]; then
-    echo "Error: Root partition is already larger than 8.5 GB ($CURRENT_ROOT_END MB)."
-    echo "Automatic expansion was probably not disabled in cmdline.txt."
-    exit 1
-fi
-
-
-echo "Yes" | parted ---pretend-input-tty "$DISK" resizepart 2 8192MB
-
-parted -s "$DISK" mkpart primary "" 8192MB 100%
-
-partprobe "$DISK"
-sleep 2
-
-resize2fs "$PART_ROOT"
-
-mkfs.exfat -n "RECORDINGS" "$PART_DATA"
 
 mkdir -p "$MOUNTPOINT"
+chmod 777 "$MOUNTPOINT"
+
 UUID=$(blkid -o value -s UUID "$PART_DATA")
-
-
 
 grep -q "configfs" /etc/fstab || echo "configfs /sys/kernel/config configfs defaults 0 0" >> /etc/fstab
 

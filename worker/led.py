@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-only
 import time
 import threading
 from rpi_ws281x import PixelStrip, Color

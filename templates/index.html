@@ -125,6 +125,13 @@
                     <span class="slider"></span>
                 </label>
             </div>
+            <div class="config-row">
+                <label>Image Offset</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="range" id="roi-offset" min="0" max="25" value="20" oninput="updateRoiOffset()" style="width: 100px;">
+                    <span id="roi-offset-label" style="min-width: 2.5em; text-align: center; font-size: 0.9em; color: #aaa;">0.20</span>
+                </div>
+            </div>
         </div>
 
         <h3>Recordings</h3>
@@ -202,6 +209,16 @@
             });
         }
 
+        async function updateRoiOffset() {
+            const val = parseInt(document.getElementById('roi-offset').value) / 100;
+            document.getElementById('roi-offset-label').textContent = val.toFixed(2);
+            await fetch('/set_roi', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({x_offset: val})
+            });
+        }
+
         async function updateConfig() {
             const fps = document.getElementById('fps-input').value;
             const thr = document.getElementById('thr-input').value;
@@ -238,6 +255,8 @@
             document.getElementById('preview-toggle').checked = d.preview_while_recording;
             document.getElementById('peaking-toggle').checked = d.focus_peaking;
             document.getElementById('peaking-threshold').value = d.peaking_threshold;
+            document.getElementById('roi-offset').value = Math.round((d.roi_x_offset || 0.2) * 100);
+            document.getElementById('roi-offset-label').textContent = (d.roi_x_offset || 0.2).toFixed(2);
             window.FOCUS_MAX = d.focus_max || 4500;
             setActiveAwb(d.awb);
         });

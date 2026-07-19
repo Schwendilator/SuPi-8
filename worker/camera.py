@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-only
 import time
 import os
 import threading
@@ -14,7 +15,8 @@ from libcamera import Transform, controls
 # Settings
 FPS                  = 18
 RES_MAIN             = (1600, 1200)
-ROI_NORM             = (0.05, 0.0, 0.75, 1.0)
+ROI_NORM             = (0.2, 0.0, 0.75, 1.0)
+ROI_X_OFFSET         = ROI_NORM[0]
 ROTATE_180           = True
 OUTPUT_PATH          = "/mnt/recordings"
 CHECK_EVERY_S        = 0.1
@@ -32,7 +34,7 @@ PEAKING_THRESHOLD    = 75
 
 CONFIG_PATH          = os.path.join(os.path.dirname(__file__), "config.json")
 
-_DEFAULTS = BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD
+_DEFAULTS = BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET
 
 AWB_MODES = {
     "Tungsten":    controls.AwbModeEnum.Tungsten,
@@ -94,7 +96,7 @@ def camera_worker():
 
     sensor_w, sensor_h = picam2.camera_properties.get("PixelArraySize")
     rect = (
-        int(ROI_NORM[0] * sensor_w), int(ROI_NORM[1] * sensor_h),
+        int(ROI_X_OFFSET * sensor_w), int(ROI_NORM[1] * sensor_h),
         int(ROI_NORM[2] * sensor_w), int(ROI_NORM[3] * sensor_h)
     )
 
@@ -184,12 +186,27 @@ def camera_worker():
 
 
 # Config persistence
+def set_roi(x_offset):
+    global ROI_X_OFFSET
+    ROI_X_OFFSET = x_offset
+    try:
+        sensor_w, sensor_h = picam2.camera_properties.get("PixelArraySize")
+        rect = (
+            int(ROI_X_OFFSET * sensor_w), int(ROI_NORM[1] * sensor_h),
+            int(ROI_NORM[2] * sensor_w), int(ROI_NORM[3] * sensor_h)
+        )
+        picam2.set_controls({"ScalerCrop": rect})
+    except Exception:
+        pass
+
+
 def save_config():
     config = {
         "bitrate": BITRATE // 1_000_000,
         "brightness_threshold": BRIGHTNESS_THRESHOLD,
         "awb_mode": AWB_MODE,
         "peaking_threshold": PEAKING_THRESHOLD,
+        "roi_x_offset": ROI_X_OFFSET,
     }
     tmp = CONFIG_PATH + ".tmp"
     with open(tmp, "w") as f:
@@ -207,7 +224,7 @@ def load_config():
     except Exception as e:
         print(f"Error loading config: {e}")
         return
-    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD
+    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET
     if "bitrate" in config:
         BITRATE = config["bitrate"] * 1_000_000
     if "brightness_threshold" in config:
@@ -216,12 +233,14 @@ def load_config():
         AWB_MODE = config["awb_mode"]
     if "peaking_threshold" in config:
         PEAKING_THRESHOLD = config["peaking_threshold"]
+    if "roi_x_offset" in config:
+        ROI_X_OFFSET = config["roi_x_offset"]
     print(f"Config loaded: {config}")
 
 
 def reset_config():
-    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD
-    BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD = _DEFAULTS
+    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET
+    BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET = _DEFAULTS
     if os.path.exists(CONFIG_PATH):
         os.remove(CONFIG_PATH)
     try:

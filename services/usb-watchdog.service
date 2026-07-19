@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-only
+[Unit]
+Description=USB Port Watchdog
+After=multi-user.target
+
+[Service]
+ExecStartPre=/bin/sleep 20
+ExecStart=/usr/local/bin/usb-watchdog.sh
+Restart=always
+RestartSec=5
+
+
+[Install]
+WantedBy=multi-user.target
