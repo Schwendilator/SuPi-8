@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-only
+[Unit]
+Description=SuPi-8 First-Boot Storage Expansion
+After=local-fs.target
+Before=supi-8.service
+ConditionPathExists=!/boot/firmware/supi8-storage-done
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/expand-storage.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -23,7 +23,8 @@ def gen_frames():
     camera.stream_active = True
     try:
         while True:
-            frame = camera.picam2.capture_array("lores")
+            with camera.camera_lock:
+                frame = camera.picam2.capture_array("lores")
             y_frame = frame[:camera.LORES_SIZE[1], :camera.LORES_SIZE[0]]
 
             if camera.focus_peaking:
@@ -81,13 +82,30 @@ def delete(filename):
 
 @app.route('/set_config', methods=['POST'])
 def set_config():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+
+    try:
+        if 'fps' in data:
+            fps = int(data['fps'])
+            if not (1 <= fps <= 60):
+                return jsonify({'status': 'error', 'message': 'fps must be between 1 and 60'}), 400
+        if 'threshold' in data:
+            threshold = float(data['threshold'])
+            if not (0 <= threshold <= 255):
+                return jsonify({'status': 'error', 'message': 'threshold must be between 0 and 255'}), 400
+        if 'bitrate' in data:
+            bitrate = int(data['bitrate'])
+            if not (1 <= bitrate <= 50):
+                return jsonify({'status': 'error', 'message': 'bitrate must be between 1 and 50'}), 400
+    except (TypeError, ValueError):
+        return jsonify({'status': 'error', 'message': 'Invalid config values'}), 400
+
     if 'threshold' in data:
-        camera.BRIGHTNESS_THRESHOLD = float(data['threshold'])
+        camera.BRIGHTNESS_THRESHOLD = threshold
     if 'fps' in data:
-        camera.FPS = int(data['fps'])
+        camera.set_fps(fps)
     if 'bitrate' in data:
-        camera.BITRATE = int(data['bitrate']) * 1_000_000
+        camera.BITRATE = bitrate * 1_000_000
     camera.save_config()
     return jsonify({'status': 'ok',
                     'threshold': camera.BRIGHTNESS_THRESHOLD,

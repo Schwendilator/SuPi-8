@@ -34,7 +34,7 @@ PEAKING_THRESHOLD    = 75
 
 CONFIG_PATH          = os.path.join(os.path.dirname(__file__), "config.json")
 
-_DEFAULTS = BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET
+_DEFAULTS = BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET, FPS
 
 AWB_MODES = {
     "Tungsten":    controls.AwbModeEnum.Tungsten,
@@ -50,6 +50,8 @@ preview_while_recording = False
 stream_active = False
 focus_peaking = False
 camera_status = {"avg": 0.0, "focus": 0.0, "gain": 0.0, "temp": 0, "recording": False}
+
+camera_lock = threading.Lock()
 
 if not os.path.exists(OUTPUT_PATH):
     os.makedirs(OUTPUT_PATH)
@@ -116,10 +118,11 @@ def camera_worker():
 
     try:
         while True:
-            lo = picam2.capture_array("lores")
+            with camera_lock:
+                lo = picam2.capture_array("lores")
+                metadata = picam2.capture_metadata()
             avg = average_brightness_y_plane_yuv420(lo, LORES_SIZE)
 
-            metadata = picam2.capture_metadata()
             gain = metadata.get("AnalogueGain", 0)
             exp = metadata.get("ExposureTime", 0)
             colour_gains = metadata.get("ColourGains", (0, 0))
@@ -144,8 +147,6 @@ def camera_worker():
                 "temp": colour_temp,
                 "recording": recording,
             })
-
-            frame_us = int(round(1_000_000 / FPS))
 
             if avg < BRIGHTNESS_THRESHOLD:
                 consecutive_dark_count += 1
@@ -195,7 +196,22 @@ def set_roi(x_offset):
             int(ROI_X_OFFSET * sensor_w), int(ROI_NORM[1] * sensor_h),
             int(ROI_NORM[2] * sensor_w), int(ROI_NORM[3] * sensor_h)
         )
-        picam2.set_controls({"ScalerCrop": rect})
+        with camera_lock:
+            picam2.set_controls({"ScalerCrop": rect})
+    except Exception:
+        pass
+
+
+def set_fps(fps):
+    global FPS
+    FPS = fps
+    frame_us = int(round(1_000_000 / FPS))
+    try:
+        with camera_lock:
+            picam2.set_controls({
+                "FrameDurationLimits": (frame_us, frame_us),
+                "ExposureTime": frame_us,
+            })
     except Exception:
         pass
 
@@ -207,6 +223,7 @@ def save_config():
         "awb_mode": AWB_MODE,
         "peaking_threshold": PEAKING_THRESHOLD,
         "roi_x_offset": ROI_X_OFFSET,
+        "fps": FPS,
     }
     tmp = CONFIG_PATH + ".tmp"
     with open(tmp, "w") as f:
@@ -224,7 +241,7 @@ def load_config():
     except Exception as e:
         print(f"Error loading config: {e}")
         return
-    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET
+    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET, FPS
     if "bitrate" in config:
         BITRATE = config["bitrate"] * 1_000_000
     if "brightness_threshold" in config:
@@ -235,18 +252,23 @@ def load_config():
         PEAKING_THRESHOLD = config["peaking_threshold"]
     if "roi_x_offset" in config:
         ROI_X_OFFSET = config["roi_x_offset"]
+    if "fps" in config:
+        FPS = config["fps"]
     print(f"Config loaded: {config}")
 
 
 def reset_config():
-    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET
-    BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET = _DEFAULTS
+    global BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET, FPS
+    BITRATE, BRIGHTNESS_THRESHOLD, AWB_MODE, PEAKING_THRESHOLD, ROI_X_OFFSET, FPS = _DEFAULTS
     if os.path.exists(CONFIG_PATH):
         os.remove(CONFIG_PATH)
     try:
-        picam2.set_controls({"AwbMode": AWB_MODES[AWB_MODE]})
+        with camera_lock:
+            picam2.set_controls({"AwbMode": AWB_MODES[AWB_MODE]})
     except Exception:
         pass
+    set_roi(ROI_X_OFFSET)
+    set_fps(FPS)
 
 
 load_config()
