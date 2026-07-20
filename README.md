@@ -1,7 +1,7 @@
 # SuPi-8
 
 A Raspberry Pi Zero 2W tucked inside a Super 8 cartridge — turns any Super 8 camera with a removable film gate into a digital film camera. Wi-Fi hotspot, web UI, motion-triggered recording.
-The sensor sits at the film gate position where the film would normally run. A 3D-printed cartridge body (CAD files included — work in progress) holds everything.
+The sensor sits at the film gate position where the film would normally run. A 3D-printed cartridge body holds everything.
 
 ## Hardware
 
@@ -53,7 +53,7 @@ Before assembly, the lens has to be removed from the Camera Module 3 so the bare
 
 ### 1. Print the case
 
-Print the cartridge housing — ideally in a filament with some heat resistance (e.g. ABS/ASA/PETG), since it sits close to a working camera.
+Print the cartridge housing — ideally in a filament with some heat resistance (e.g. ABS/ASA/PETG).
 
 ### 2. Wire the electronics
 
@@ -164,7 +164,7 @@ The device backs up the current version, deploys yours, and restarts. If the new
 
 ## The CAD Files
 
-The `CAD/` and `KiCad/` directories contain the cartridge design — not finished yet, but the dimensions are correct for a Pi Zero 2W + Camera Module 3 (lens removed).
+The `CAD/` directory contains the cartridge design. Sime KiCad Stuff is work in progress.
 
 ## License
 
