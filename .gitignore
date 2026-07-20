@@ -10,8 +10,11 @@ build/
 worker/config.json
 
 # CAD files
-/CAD
 /KiCad
+
+# USB Stuff - buggy
+/scripts/usb*
+services/usb*
 
 # OS
 .DS_Store

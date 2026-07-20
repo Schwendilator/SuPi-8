@@ -8,21 +8,22 @@ The sensor sits at the film gate position where the film would normally run. A 3
 **Electronics**
 
 - **Raspberry Pi Zero 2W**
-- **Camera Module 3** (lens removed, sensor exposed — see [Preparation](#preparation) below)
+- **Camera Module 3** (lens removed)
 - **Arducam B0439** 200 mm sensor extension cable
-- **2× WS2812b LEDs** on GPIO 10
+- **2× WS2812b LED modules**
 - **18650 Li-ion battery**, with U-shaped solder tabs
-- **JST connector + socket**, to make the battery connection removable
-- **MH-CD42** (USB-C charge/discharge/boost module for the 18650 cell — integrated overcharge/over-discharge/short-circuit protection and a charge-status LED. Its physical power button is the device's on/off switch; the cartridge's mechanical design is built around this board and its button placement, so it needs to be this specific module, not just any TP4056-style charger)
-- **USB-C socket** (charging port)
+- **JST connector + socket**
+- **MH-CD42**
+- **USB-C socket**
 - SD card ≥ 16 GB
 - Super 8 Camera with removed Film Gate
 
 **Mechanical / fasteners**
 
-- 1× compression spring, 1 × 6 × 20 mm (DIN 2095), ~4 mm inner Ø (colloquially known as a "ball-pen spring")
+- 1× compression spring, 1 × 6 × 20 mm (DIN 2095)
 - 1× M3 threaded rod, 70 mm
 - 1× M3 nut
+- 2x M3 washer (DIN 125)
 - 1× M3 knurled nut, high form (DIN 466)
 - 3× M2.5×4 threaded inserts
 - 1× M3×6 threaded insert
@@ -34,9 +35,11 @@ The sensor sits at the film gate position where the film would normally run. A 3
 **Tools / consumables**
 
 - Soldering iron + a bit of wire
-- Sharp thin blade (scalpel or razor blade), for lens removal
+- Thin enameled copper wire (magnet wire)
+- Sharp thin blade (scalpel or razor blade)
+- Insulation tape
 - A 3D-Printer and a bit of filament
-- Glue to attach the sensor, the USB-C port and the charging controller
+- Glue
 
 ## Preparation
 
@@ -61,7 +64,7 @@ Easiest done on the bench before anything goes into the case:
 3. Solder the VIN wires to the USB-C socket (this is the charging input).
 4. Solder the OUT and GND wires to the Pi's 5V/GND header pins (physical pin 4 = 5V, pin 6 = GND) — this powers the Pi directly through the GPIO header instead of its own USB port.
 5. Solder wires for the LEDs to 5V (physical pin 2) and GND, plus a data wire to GPIO10 (physical pin 19).
-6. Chain the two LED modules together (data-out → data-in).
+6. Chain the two LED modules together. Thin enameled copper wire (magnet wire) is recommended here.
 7. Solder the wires from step 5 onto the first LED module.
 8. Glue both LED modules into the lid and cover the solder joints with insulation tape.
 
@@ -71,14 +74,14 @@ Press in the threaded inserts: 4× M2 for the Camera Module 3 board, 3× M2.5 fo
 
 ### 4. Build the sensor/focus assembly
 
-1. Screw the M3 threaded rod into the sensor holder and lock it with the M3 nut, then slide the spring onto the rod.
+1. Screw the M3 threaded rod into the sensor holder and lock it with a M3 nut and a washer, then slide the spring onto the rod.
 2. **Carefully** glue the bare sensor onto the sensor holder and connect it with the Arducam extension cable.
 3. Connect the ribbon cable and the Arducam B0439 extension cable to the Camera Module 3 board.
 4. Screw the Camera Module board down with the 4× M2×6 screws, with the Arducam connector facing down.
 
 ### 5. Final assembly
 
-1. Slide the sensor holder (with rod and spring) into the housing and lock it in place with the knurled nut.
+1. Put the washer through the slot, slide the sensor holder (with rod and spring) into the housing and lock it in place with the knurled nut.
 2. Glue the USB-C socket into position.
 3. Glue the MH-CD42 charging board into position.
 4. Glue the battery into position.
