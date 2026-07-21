@@ -8,7 +8,7 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-STAMP="/boot/firmware/supi8-storage-done"
+STAMP="/boot/firmware/supi-8-storage-done"
 DEVICE="/dev/mmcblk0"
 PART_NUM="3"
 PART_DEV="${DEVICE}p${PART_NUM}"

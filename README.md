@@ -109,7 +109,7 @@ Press in the threaded inserts: 4× M2 for the Camera Module 3 board, 3× M2.5 fo
 
 The easiest way to get started - no manual partitioning, no dependency installs.
 
-1. Download the latest `supi8_*.img.zip` from the [Releases](../../releases) page. It's zipped because GitHub caps individual release files at 2 GiB, and the raw image is bigger than that.
+1. Download the latest `supi-8_*.img.zip` from the [Releases](../../releases) page. It's zipped because GitHub caps individual release files at 2 GiB, and the raw image is bigger than that.
 2. Flash it to an SD card (≥ 16 GB) with [Raspberry Pi Imager](https://www.raspberrypi.com/software/), [balenaEtcher](https://etcher.balena.io/), or `dd`. Imager and balenaEtcher can both write the `.zip` directly without unpacking it first - or you can unzip it yourself to get the raw `.img`, e.g. if you want to inspect or modify it with other tools before flashing.
 3. Insert the card and boot the Pi.
 

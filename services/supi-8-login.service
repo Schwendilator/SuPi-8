@@ -2,7 +2,7 @@
 [Unit]
 Description=SuPi-8 First-Boot Default Login
 After=local-fs.target
-ConditionPathExists=!/boot/firmware/supi8-login-done
+ConditionPathExists=!/boot/firmware/supi-8-login-done
 
 [Service]
 Type=oneshot

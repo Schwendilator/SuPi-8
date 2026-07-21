@@ -8,7 +8,7 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-STAMP="/boot/firmware/supi8-login-done"
+STAMP="/boot/firmware/supi-8-login-done"
 USERNAME="pi"
 PASSWORD="Classic!"
 
