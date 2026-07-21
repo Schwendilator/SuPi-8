@@ -4,6 +4,8 @@
 
 A Raspberry Pi Zero 2W tucked inside a Super 8 cartridge brings any Super 8 camera with a removable film gate back to life. It comes with a Wi-Fi hotspot, a web UI for live preview, and brightness-triggered recording.
 
+![SuPi-8 camera - open cover](media/SuPi-8_Camera_open_cover.jpg)
+
 Super 8 film is expensive, and getting it developed these days is even more so. SuPi-8 lets you keep shooting on the camera you already own without buying or processing a single roll. It's not a lens adapter or a hack bolted onto the outside; it replaces the film cartridge itself, with the sensor sitting exactly where the film used to run. The camera's original optics, shutter, and frame-advance mechanism do all the work exactly like they always did, so the picture keeps its authentic Super 8 look and feel.
 
 It works with pretty much any camera that lets you unscrew the film gate, which is almost every Super 8 camera, with the notable exception of Nizo models. Removing the gate is fully reversible: nothing gets modified or damaged, so the camera can always go back to shooting real film. The Raspberry Pi Zero 2W, sensor, battery, and all the electronics live inside a compact 3D-printed cartridge body that takes the place of the film reel.
@@ -58,8 +60,11 @@ Before assembly, the lens has to be removed from the Camera Module 3 so the bare
 1. Remove the sensor module from the board and scrape the glue off the backside.
 2. Gently warm the lens holder (e.g. with a hot air gun on low, or a hairdryer). This softens the adhesive holding the lens assembly to the sensor board.
 3. While warm, carefully work a sharp, thin blade (scalpel or razor blade) under the edge of the lens holder and slowly pry it loose. Go slowly and reheat if it resists - the sensor underneath is fragile and easily scratched or cracked. The two autofocus wires will typically break as the lens holder comes free; that's expected.
+![Sensor cut](media/SuPi-8_Sensor_cut.jpg)
 4. Carefully scrape off the remaining glue from the edges so the front sits flat.
+![Sensor removed glue](media/SuPi-8_Sensor_removed_glue.jpg)
 5. Once removed, keep the sensor covered/protected until it's mounted in the cartridge to avoid dust on the die.
+![Sensor removed lens](media/SuPi-8_Sensor_no_lens.jpg)
 
 ## Assembly
 
@@ -88,6 +93,7 @@ Press in the threaded inserts: 4× M2 for the Camera Module 3 board, 3× M2.5 fo
 
 1. Screw the M3 threaded rod into the sensor holder and lock it with an M3 nut and a washer, then slide the spring onto the rod.
 2. **Carefully** glue the bare sensor with a **small** drop of glue onto the sensor holder and connect it with the Arducam extension cable.
+![Sensor assembly](media/SuPi-8_Sensor_assembly.jpg)
 3. Connect the ribbon cable and the Arducam B0439 extension cable to the Camera Module 3 board.
 4. Screw the Camera Module board down with the 4× M2×6 screws, with the Arducam connector facing down.
 
@@ -97,9 +103,11 @@ Press in the threaded inserts: 4× M2 for the Camera Module 3 board, 3× M2.5 fo
 2. Glue the USB-C socket into position.
 3. Glue the MH-CD42 charging board into position.
 4. Glue the battery into position.
+![Electronics](media/SuPi-8_Electronics.jpg)
 5. Fold the Raspberry Pi camera cable so it fits inside the housing and connect it to the Pi.
 6. Screw the Pi down with the single M2.5 (DIN 912) screw in the center mounting hole.
 7. Plug the battery's JST connector into the MH-CD42.
+![Electronics assembled](media/SuPi-8_Electronics_assembled.jpg)
 8. Close the lid and screw it shut.
 
 
