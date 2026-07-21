@@ -4,6 +4,9 @@
 
 A Raspberry Pi Zero 2W tucked inside a Super 8 cartridge brings any Super 8 camera with a removable film gate back to life. It comes with a Wi-Fi hotspot, a web UI for live preview, and brightness-triggered recording.
 
+## ⚠️ Be advised, this is an alpha version.
+### Still early, still rough around the edges. Some things won't work quite right, some things might just be broken. Have fun with it, test it as much as you can, report bugs, issues and suggestions, but don't expect a fully polished experience yet.
+
 ![SuPi-8 camera - open cover](media/SuPi-8_Camera_open_cover.jpg)
 
 Super 8 film is expensive, and getting it developed these days is even more so. SuPi-8 lets you keep shooting on the camera you already own without buying or processing a single roll. It's not a lens adapter or a hack bolted onto the outside; it replaces the film cartridge itself, with the sensor sitting exactly where the film used to run. The camera's original optics, shutter, and frame-advance mechanism do all the work exactly like they always did, so the picture keeps its authentic Super 8 look and feel.
