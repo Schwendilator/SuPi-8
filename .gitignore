@@ -24,3 +24,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# other stuff
+/temp
