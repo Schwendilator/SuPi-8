@@ -21,4 +21,5 @@ systemctl daemon-reload
 
 systemctl enable supi-8.service
 systemctl enable supi8-storage.service
+systemctl enable supi8-login.service
 # systemctl enable usb-watchdog.service -> currently quite buggy

@@ -14,7 +14,7 @@ worker/config.json
 
 # USB Stuff - buggy
 /scripts/usb*
-services/usb*
+/services/usb*
 
 # OS
 .DS_Store
