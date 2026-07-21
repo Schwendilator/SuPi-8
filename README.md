@@ -61,10 +61,12 @@ Before assembly, the lens has to be removed from the Camera Module 3 so the bare
 2. Gently warm the lens holder (e.g. with a hot air gun on low, or a hairdryer). This softens the adhesive holding the lens assembly to the sensor board.
 3. While warm, carefully work a sharp, thin blade (scalpel or razor blade) under the edge of the lens holder and slowly pry it loose. Go slowly and reheat if it resists - the sensor underneath is fragile and easily scratched or cracked. The two autofocus wires will typically break as the lens holder comes free; that's expected.
 ![Sensor cut](media/SuPi-8_Sensor_cut.jpg)
+
+![Sensor removed lens](media/SuPi-8_Sensor_no_lens.jpg)
 4. Carefully scrape off the remaining glue from the edges so the front sits flat.
 ![Sensor removed glue](media/SuPi-8_Sensor_removed_glue.jpg)
 5. Once removed, keep the sensor covered/protected until it's mounted in the cartridge to avoid dust on the die.
-![Sensor removed lens](media/SuPi-8_Sensor_no_lens.jpg)
+
 
 ## Assembly
 
