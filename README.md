@@ -206,6 +206,15 @@ The device backs up the current version, deploys the new one, and restarts. If t
 
 The `CAD/` directory contains the cartridge design.
 
+## Acknowledgments
+
+This project wouldn't exist without the people and projects that inspired it:
+
+- [Jenny List](https://www.youtube.com/@jennylist)
+- [befinitiv](https://www.youtube.com/@kassenbon)
+- [digitalsuper8.com](https://www.digitalsuper8.com/)
+- [element14 presents](https://www.youtube.com/@element14presents)
+
 ## License
 
 **Software** (setup.sh, worker/, templates/, scripts/, services/) - [GNU General Public License v3.0](LICENSE)
