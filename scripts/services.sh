@@ -20,6 +20,6 @@ cp "$REPO_DIR/services/"*.path /etc/systemd/system/ 2>/dev/null || true
 systemctl daemon-reload
 
 systemctl enable supi-8.service
-systemctl enable supi8-storage.service
-systemctl enable supi8-login.service
+systemctl enable supi-8-storage.service
+systemctl enable supi-8-login.service
 # systemctl enable usb-watchdog.service -> currently quite buggy
