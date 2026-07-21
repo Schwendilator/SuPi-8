@@ -4,8 +4,8 @@
 
 A Raspberry Pi Zero 2W tucked inside a Super 8 cartridge brings any Super 8 camera with a removable film gate back to life. It comes with a Wi-Fi hotspot, a web UI for live preview, and brightness-triggered recording.
 
-## ⚠️ Be advised, this is an alpha version.
-### Still early, still rough around the edges. Some things won't work quite right, some things might just be broken. Have fun with it, test it as much as you can, report bugs, issues and suggestions, but don't expect a fully polished experience yet.
+> ## ⚠️ Be advised, this is an alpha version.
+> ### Still early, still rough around the edges. Some things won't work quite right, some things might just be broken. Have fun with it, test it as much as you can, report bugs, issues and suggestions, but don't expect a fully polished experience yet.
 
 ![SuPi-8 camera - open cover](media/SuPi-8_Camera_open_cover.jpg)
 
