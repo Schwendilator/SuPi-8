@@ -38,7 +38,7 @@ nmcli connection modify supi-8-hotspot \
     wifi-sec.psk "$HOTSPOT_PASS" \
     connection.autoconnect-priority -1
 
-for conn in $(nmcli -t -f NAME,TYPE connection show | grep wifi | cut -d: -f1); do
+for conn in $(nmcli -t -f NAME,TYPE connection show | grep -E ':(wifi|802-11-wireless)$' | cut -d: -f1); do
     if [ "$conn" != "supi-8-hotspot" ]; then
         nmcli connection modify "$conn" \
             connection.autoconnect yes \

@@ -286,7 +286,7 @@ def setup_set_mode():
             ).stdout.strip()
             other_wifi = [
                 line.split(':')[0] for line in listing.split('\n')
-                if len(line.split(':')) == 2 and line.split(':')[1] == 'wifi'
+                if len(line.split(':')) == 2 and line.split(':')[1] in ('wifi', '802-11-wireless')
                 and line.split(':')[0] != 'supi-8-hotspot'
             ]
 
@@ -351,7 +351,7 @@ def setup_factory_reset():
         for conn in subprocess.run(['sudo', 'nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show'],
                                    capture_output=True, text=True, check=True).stdout.strip().split('\n'):
             parts = conn.split(':')
-            if len(parts) == 2 and parts[1] == 'wifi' and parts[0] != 'supi-8-hotspot':
+            if len(parts) == 2 and parts[1] in ('wifi', '802-11-wireless') and parts[0] != 'supi-8-hotspot':
                 subprocess.run(['sudo', 'nmcli', 'connection', 'delete', parts[0]], check=False)
         return jsonify({'status': 'ok', 'message': 'Factory reset complete. Hotspot password: Classic!'})
     except Exception as e:
