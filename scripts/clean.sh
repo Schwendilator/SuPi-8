@@ -16,6 +16,8 @@ systemctl stop supi-8-storage.service 2>/dev/null || true
 systemctl disable supi-8-storage.service 2>/dev/null || true
 systemctl stop supi-8-login.service 2>/dev/null || true
 systemctl disable supi-8-login.service 2>/dev/null || true
+systemctl stop supi-8-sshkeys.service 2>/dev/null || true
+systemctl disable supi-8-sshkeys.service 2>/dev/null || true
 systemctl stop usb-watchdog.service 2>/dev/null || true
 systemctl disable usb-watchdog.service 2>/dev/null || true
 
@@ -34,6 +36,7 @@ rm -f /usr/local/bin/set-default-login.sh
 rm -f /etc/systemd/system/supi-8.service
 rm -f /etc/systemd/system/supi-8-storage.service
 rm -f /etc/systemd/system/supi-8-login.service
+rm -f /etc/systemd/system/supi-8-sshkeys.service
 rm -f /etc/systemd/system/usb-watchdog.service
 
 # Remove first-boot stamp files, so a reinstall runs those steps again

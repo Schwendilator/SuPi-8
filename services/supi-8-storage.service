@@ -3,7 +3,7 @@
 Description=SuPi-8 First-Boot Storage Expansion
 After=local-fs.target
 Before=supi-8.service
-ConditionPathExists=!/boot/firmware/supi8-storage-done
+ConditionPathExists=!/boot/firmware/supi-8-storage-done
 
 [Service]
 Type=oneshot

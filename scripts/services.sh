@@ -21,5 +21,8 @@ systemctl daemon-reload
 
 systemctl enable supi-8.service
 systemctl enable supi-8-storage.service
-systemctl enable supi-8-login.service
+if [ "${CREATE_DEFAULT_LOGIN:-yes}" != "no" ]; then
+    systemctl enable supi-8-login.service
+fi
+systemctl enable supi-8-sshkeys.service
 # systemctl enable usb-watchdog.service -> currently quite buggy

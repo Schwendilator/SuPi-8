@@ -60,7 +60,7 @@ It works with pretty much any camera that lets you unscrew the film gate, which 
 
 Before assembly, the lens has to be removed from the Camera Module 3 so the bare sensor sits flush where the film gate was.
 
-1. Remove the film gate from your camera. Usually two screws right were the film would move along. Those are sometimes a bit fiddly.
+1. Remove the film gate from your camera. Usually two screws right where the film would move along. Those are sometimes a bit fiddly.
 2. Remove the sensor module from the board and scrape the glue off the backside.
 3. Gently warm the lens holder (e.g. with a hot air gun on low, or a hairdryer). This softens the adhesive holding the lens assembly to the sensor board.
 4. While warm, carefully work a sharp, thin blade (scalpel or razor blade) under the edge of the lens holder and slowly pry it loose. Go slowly and reheat if it resists - the sensor underneath is fragile and easily scratched or cracked. The two autofocus wires will typically break as the lens holder comes free; that's expected.
@@ -122,7 +122,7 @@ Press in the threaded inserts: 4× M2 for the Camera Module 3 board, 3× M2.5 fo
 
 The easiest way to get started - no manual partitioning, no dependency installs.
 
-1. Download the latest `supi-8_*.img.xz` from the [Releases](../../releases) page. It's zipped because GitHub caps individual release files at 2 GiB, and the raw image is bigger than that.
+1. Download the latest `supi-8_*.img.xz` from the [Releases](../../releases) page. It's compressed because GitHub caps individual release files at 2 GiB, and the raw image is bigger than that.
 2. Flash it to an SD card (≥ 16 GB) with [Raspberry Pi Imager](https://www.raspberrypi.com/software/), [balenaEtcher](https://etcher.balena.io/), or `dd`. Imager and balenaEtcher can both write the `supi-8_*.img.xz` directly without unpacking it first - or you can unzip it yourself to get the raw `.img`, e.g. if you want to inspect or modify it with other tools before flashing.
 3. Insert the card and boot the Pi.
 

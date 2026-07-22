@@ -50,7 +50,7 @@ for f in "$LOCAL_BIN"/*.sh; do
 done
 
 mkdir -p "$BACKUP_STAGE/services"
-for f in "$SYSTEMD_DIR"/supi8*.service "$SYSTEMD_DIR"/usb-watchdog.service; do
+for f in "$SYSTEMD_DIR"/supi-8*.service "$SYSTEMD_DIR"/usb-watchdog.service; do
     cp "$f" "$BACKUP_STAGE/services/"
     HAVE_BACKUP=1
 done

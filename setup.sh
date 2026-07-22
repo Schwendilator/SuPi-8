@@ -89,6 +89,18 @@ done
 export HOTSPOT_PASS
 export HOTSPOT_PASS
 
+read -r -p "Create default login (pi / Classic!)? (Y/n): " CREATE_LOGIN_ANSWER
+case "$CREATE_LOGIN_ANSWER" in
+    n|N|no|NO)
+        CREATE_DEFAULT_LOGIN="no"
+        echo "Skipping default login creation."
+        ;;
+    *)
+        CREATE_DEFAULT_LOGIN="yes"
+        ;;
+esac
+export CREATE_DEFAULT_LOGIN
+
 
 run "Clean" clean.sh
 run "Storage" storage.sh
