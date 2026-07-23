@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# config
+worker/config.json
+
+# CAD files
+/KiCad
+
+# USB Stuff - buggy
+/scripts/usb*
+/services/usb*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+
+# other stuff
+/temp

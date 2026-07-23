@@ -183,6 +183,8 @@ the first LED shows recording status - solid green when idle, blinking red while
 
 **Setup:** Connect to Wi-Fi, upload firmware updates, restore previous versions, factory reset.
 
+![SuPi-8 WebUI](media/SuPi-8_WebUI.jpg)
+
 Vibe Coded with Claude, because I don't like doing frontends.
 
 

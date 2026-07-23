@@ -34,7 +34,7 @@ parted -s "$DEVICE" resizepart "$PART_NUM" 100%
 partprobe "$DEVICE"
 udevadm settle
 
-mkfs.exfat -n "$LABEL" "$PART_DEV"
+mkfs.exfat -F -n "$LABEL" "$PART_DEV"
 
 mkdir -p "$MOUNTPOINT"
 chmod 777 "$MOUNTPOINT"
