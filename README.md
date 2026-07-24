@@ -30,7 +30,7 @@ It works with pretty much any camera that lets you unscrew the film gate, which 
 
 **Mechanical / fasteners**
 
-- 1× compression spring, 1 × 6 × 20 mm (DIN 2095)
+- 1× compression spring, 4 mm inner diameter, 20 mm length (a ball pen spring works quite well)
 - 1× M3 threaded rod, 70 mm
 - 1× M3 nut
 - 2× M3 washer (DIN 125)
