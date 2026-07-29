@@ -210,7 +210,7 @@ The device backs up the current version, deploys the new one, and restarts. If t
 
 ## The CAD Files
 
-The `CAD/` directory contains the cartridge design.
+The `CAD/` directory contains the cartridge design and a soldering helper for the LED's as well as a battery adapter for the commonly used PX14 mercury battery. You can use 675 hearing aid batteries for this.
 
 ## Acknowledgments
 
