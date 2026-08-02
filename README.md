@@ -6,6 +6,7 @@ A Raspberry Pi Zero 2W tucked inside a Super 8 cartridge brings any Super 8 came
 
 > ## ⚠️ Be advised, this is an alpha version.
 > ### Still early, still rough around the edges. Some things won't work quite right, some things might just be broken. Have fun with it, test it as much as you can, report bugs, issues and suggestions, but don't expect a fully polished experience yet.
+> ## Pi Zero 2W is currently hard to find. I've started working on a CM4/CM5 version of it, but it is quite a task to design a suitable board.
 
 ![SuPi-8 camera - open cover](media/SuPi-8_Camera_open_cover.jpg)
 
@@ -141,7 +142,7 @@ For developers, or if you want to build your own image from scratch.
 Flash **Raspberry Pi OS Lite (64-bit)** to an SD card (≥ 16 GB). **Before booting the Pi for the first time**, resize the root partition to 8 GB and create an exFAT partition for the remaining space. Use [GParted](https://gparted.org/) or any suitable partition editor:
 
 1. Resize the rootfs partition to **8 GB**
-2. Create a new **exFAT** partition in the unallocated space (label it `RECORDINGS`)
+2. Create a new **exFAT** partition in the unallocated space (label it `Recordings`)
 3. Apply changes and boot the Pi
 
 #### 2. Boot, clone, install
@@ -210,7 +211,7 @@ The device backs up the current version, deploys the new one, and restarts. If t
 
 ## The CAD Files
 
-The `CAD/` directory contains the cartridge design and a soldering helper for the LED's as well as a battery adapter for the commonly used PX14 mercury battery. You can use 675 hearing aid batteries for this.
+The `CAD/` directory contains the cartridge design and a soldering helper for the LEDs as well as a battery adapter for the commonly used PX14 mercury battery. You can use 675 hearing aid batteries for this.
 
 ## Acknowledgments
 

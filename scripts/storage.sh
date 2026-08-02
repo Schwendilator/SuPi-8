@@ -23,13 +23,13 @@ fi
 mkdir -p "$MOUNTPOINT"
 chmod 777 "$MOUNTPOINT"
 
-UUID=$(blkid -o value -s UUID "$PART_DATA")
+LABEL=$(blkid -o value -s LABEL "$PART_DATA")
+LABEL="${LABEL:-Recordings}"
 
 grep -q "configfs" /etc/fstab || echo "configfs /sys/kernel/config configfs defaults 0 0" >> /etc/fstab
 
-if ! grep -q "$UUID" /etc/fstab; then
-    echo "UUID=$UUID $MOUNTPOINT exfat defaults,nofail,noatime,umask=0000 0 0" >> /etc/fstab
-fi
+sed -i "\|[[:space:]]$MOUNTPOINT[[:space:]]|d" /etc/fstab
+echo "LABEL=$LABEL $MOUNTPOINT exfat defaults,nofail,noatime,umask=0000 0 0" >> /etc/fstab
 
 systemctl daemon-reload
 mount -a
