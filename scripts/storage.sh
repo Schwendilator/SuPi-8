@@ -7,7 +7,9 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-PART_DATA="/dev/mmcblk0p3"
+DEVICE="/dev/mmcblk0"
+PART_NUM="3"
+PART_DATA="${DEVICE}p${PART_NUM}"
 MOUNTPOINT="/mnt/recordings"
 
 echo "Starting storage setup"
@@ -19,6 +21,10 @@ else
     echo "See README.md — resize root to 8 GB and create exFAT partition before first boot."
     exit 1
 fi
+
+sfdisk --part-type "$DEVICE" "$PART_NUM" 07
+partprobe "$DEVICE"
+udevadm settle
 
 mkdir -p "$MOUNTPOINT"
 chmod 777 "$MOUNTPOINT"

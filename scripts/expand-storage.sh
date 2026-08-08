@@ -32,6 +32,9 @@ umount "$PART_DEV" 2>/dev/null || true
 parted -s "$DEVICE" resizepart "$PART_NUM" 100%
 partprobe "$DEVICE"
 udevadm settle
+sfdisk --part-type "$DEVICE" "$PART_NUM" 07
+partprobe "$DEVICE"
+udevadm settle
 
 mkfs.exfat -n "$LABEL" "$PART_DEV"
 
