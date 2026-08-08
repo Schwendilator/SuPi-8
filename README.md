@@ -54,7 +54,7 @@ It works with pretty much any camera that lets you unscrew the film gate, which 
 
 ## Assembly guide
 
-### <details>
+<details>
 <summary>Click to expand the full assembly guide</summary>
 
 ## Preparation
